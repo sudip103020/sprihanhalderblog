@@ -1,0 +1,344 @@
+/* ================================
+   Navbar
+================================ */
+
+.main-navbar {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+  padding: 14px 0;
+}
+
+.brand {
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.brand-icon {
+  margin-right: 8px;
+}
+
+.main-navbar .nav-link {
+  font-weight: 500;
+  margin-left: 18px;
+}
+
+
+/* ================================
+   Hero
+================================ */
+
+.hero-section {
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    #fff8fb 0%,
+    #fff 50%,
+    #f7f9ff 100%
+  );
+}
+
+.min-vh-75 {
+  min-height: 78vh;
+}
+
+.hero-small-text {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.hero-content h1 {
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 800;
+  line-height: 1.05;
+  margin-bottom: 20px;
+}
+
+.hero-content h1 span {
+  font-weight: 800;
+}
+
+.hero-description {
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 1.8;
+  margin-bottom: 30px;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.primary-btn,
+.secondary-btn {
+  border-radius: 30px;
+  padding: 11px 22px;
+  font-weight: 600;
+}
+
+.primary-btn {
+  border: none;
+}
+
+.secondary-btn {
+  background: transparent;
+  border: 1px solid #ddd;
+}
+
+.hero-image-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.hero-image-box {
+  width: min(430px, 90%);
+  aspect-ratio: 1 / 1;
+  padding: 12px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 600;
+  background: #f8f8f8;
+}
+
+.image-placeholder svg {
+  font-size: 60px;
+}
+
+
+/* ================================
+   Common Sections
+================================ */
+
+.welcome-section,
+.memories-section,
+.milestone-section {
+  padding: 90px 0;
+}
+
+.welcome-section {
+  background: #fff;
+}
+
+.memories-section {
+  background: #fafafa;
+}
+
+.milestone-section {
+  background: #fff;
+}
+
+.section-heading {
+  margin-bottom: 35px;
+}
+
+.section-icon {
+  font-size: 30px;
+  margin-bottom: 15px;
+}
+
+.section-subtitle {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 800;
+  margin-bottom: 18px;
+}
+
+.section-title span {
+  font-weight: 800;
+}
+
+.section-text {
+  font-size: 17px;
+  line-height: 1.9;
+}
+
+.welcome-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  font-weight: 600;
+}
+
+
+/* ================================
+   Memories
+================================ */
+
+.memory-card {
+  height: 100%;
+  border: none;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.memory-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.memory-image {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f1f1;
+  font-size: 45px;
+}
+
+.memory-card .card-body {
+  padding: 25px;
+}
+
+.memory-card .card-title {
+  font-weight: 700;
+}
+
+.memory-card .card-text {
+  line-height: 1.7;
+}
+
+.memory-link {
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.memory-link svg {
+  margin-left: 5px;
+  font-size: 12px;
+}
+
+
+/* ================================
+   Milestones
+================================ */
+
+.milestone-card {
+  height: 100%;
+  padding: 30px 20px;
+  text-align: center;
+  border-radius: 18px;
+  background: #fafafa;
+  transition: transform 0.3s ease;
+}
+
+.milestone-card:hover {
+  transform: translateY(-5px);
+}
+
+.milestone-icon {
+  width: 65px;
+  height: 65px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 25px;
+  background: white;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07);
+}
+
+.milestone-card h5 {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.milestone-card p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+
+
+/* ================================
+   Footer
+================================ */
+
+.footer {
+  padding: 55px 0 25px;
+  background: #171717;
+  text-align: center;
+}
+
+.footer-heart {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.footer h5 {
+  font-weight: 700;
+}
+
+.footer p {
+  margin-bottom: 20px;
+}
+
+.footer-line {
+  width: 80px;
+  height: 1px;
+  margin: 20px auto;
+  background: #555;
+}
+
+.small-heart {
+  font-size: 11px;
+}
+
+
+/* ================================
+   Responsive
+================================ */
+
+@media (max-width: 991px) {
+  .main-navbar .nav-link {
+    margin-left: 0;
+  }
+
+  .hero-section {
+    padding: 60px 0;
+  }
+
+  .hero-content {
+    text-align: center;
+  }
+
+  .hero-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 50px;
+  }
+}
