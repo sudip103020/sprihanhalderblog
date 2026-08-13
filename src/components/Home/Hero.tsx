@@ -6,6 +6,8 @@ const Hero = () => {
     <section className="hero-section">
       <Container>
         <Row className="align-items-center min-vh-75">
+
+          {/* Hero Content */}
           <Col lg={6} className="hero-content">
             <p className="hero-small-text">
               Welcome to my little world
@@ -22,23 +24,36 @@ const Hero = () => {
 
             <div className="hero-buttons">
               <Button href="#memories" className="primary-btn">
-                <FaCamera /> Explore Memories
+                <FaCamera className="me-2" />
+                Explore Memories
               </Button>
 
               <Button href="#about" className="secondary-btn">
-                <FaHeart /> My Story
+                <FaHeart className="me-2" />
+                My Story
               </Button>
             </div>
           </Col>
 
+          {/* Hero Image */}
           <Col lg={6} className="hero-image-wrapper">
             <div className="hero-image-box">
-              <div className="image-placeholder">
-                <FaHeart />
-                <span>Sprihan's Photo</span>
+
+              <div className="image-placeholder profile-image">
+                <img
+                  src="/babu.jpeg"
+                  alt="Sprihan"
+                />
               </div>
+
+              {/* Decorative Heart */}
+              <div className="hero-heart">
+                <FaHeart />
+              </div>
+
             </div>
           </Col>
+
         </Row>
       </Container>
     </section>
