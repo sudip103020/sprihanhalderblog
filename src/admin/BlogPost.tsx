@@ -18,7 +18,6 @@ import {
   FaSave,
   FaImage,
   FaEye,
-  FaCloudUploadAlt,
   FaTrash,
 } from "react-icons/fa";
 
