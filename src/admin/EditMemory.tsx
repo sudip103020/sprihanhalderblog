@@ -356,24 +356,7 @@ const EditMemory = () => {
     }
   };
 
-  const getTypeName = (value: string) => {
-    switch (value) {
-      case "prescription":
-        return "Prescription";
-      case "travel":
-        return "Travel";
-      case "general":
-        return "General Memory";
-      case "video":
-        return "Video";
-      case "program":
-        return "Program / Event";
-      case "other":
-        return "Other";
-      default:
-        return value;
-    }
-  };
+
 
   if (loading) {
     return (
