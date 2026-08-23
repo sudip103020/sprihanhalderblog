@@ -9,6 +9,7 @@ import {
   Image,
   ProgressBar,
   Alert,
+  Badge,
 } from "react-bootstrap";
 import {
   FaTrash,
@@ -16,6 +17,8 @@ import {
   FaArrowLeft,
   FaGlobe,
   FaLock,
+  FaVideo,
+  FaImage,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import {
@@ -25,17 +28,19 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 
-interface SelectedImage {
+interface SelectedMedia {
   file: File;
   preview: string;
   visibility: "public" | "private";
+  mediaType: "image" | "video";
 }
 
-interface UploadedImage {
+interface UploadedMedia {
   url: string;
   publicId: string;
   visibility: "public" | "private";
   name: string;
+  mediaType: "image" | "video";
 }
 
 const Memories = () => {
@@ -46,15 +51,16 @@ const Memories = () => {
   const [description, setDescription] = useState("");
   const [comment, setComment] = useState("");
 
-  const [images, setImages] = useState<SelectedImage[]>([]);
+  const [media, setMedia] = useState<SelectedMedia[]>([]);
 
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Image select
-  const handleImageSelect = (
+  // Select Image + Video
+  const handleMediaSelect = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const files = event.target.files;
@@ -63,47 +69,58 @@ const Memories = () => {
 
     const selectedFiles = Array.from(files);
 
-    const newImages: SelectedImage[] = selectedFiles.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-      visibility: "public",
-    }));
+    const newMedia: SelectedMedia[] = selectedFiles
+      .filter((file) => {
+        return (
+          file.type.startsWith("image/") ||
+          file.type.startsWith("video/")
+        );
+      })
+      .map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        visibility: "public",
+        mediaType: file.type.startsWith("video/")
+          ? "video"
+          : "image",
+      }));
 
-    setImages((prev) => [...prev, ...newImages]);
+    setMedia((prev) => [...prev, ...newMedia]);
 
-    // Same file আবার select করার সুবিধার জন্য
     event.target.value = "";
   };
 
-  // Remove selected image
-  const removeImage = (index: number) => {
-    setImages((prev) => {
-      const image = prev[index];
+  // Remove selected media
+  const removeMedia = (index: number) => {
+    setMedia((prev) => {
+      const item = prev[index];
 
-      URL.revokeObjectURL(image.preview);
+      if (item) {
+        URL.revokeObjectURL(item.preview);
+      }
 
       return prev.filter((_, i) => i !== index);
     });
   };
 
-  // Change Public / Private
+  // Change visibility
   const changeVisibility = (
     index: number,
     visibility: "public" | "private"
   ) => {
-    setImages((prev) =>
-      prev.map((image, i) =>
+    setMedia((prev) =>
+      prev.map((item, i) =>
         i === index
-          ? { ...image, visibility }
-          : image
+          ? { ...item, visibility }
+          : item
       )
     );
   };
 
-  // Upload image to Cloudinary
+  // Upload Image / Video to Cloudinary
   const uploadToCloudinary = async (
-    image: SelectedImage
-  ): Promise<UploadedImage> => {
+    item: SelectedMedia
+  ): Promise<UploadedMedia> => {
     const cloudName =
       import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
@@ -116,13 +133,18 @@ const Memories = () => {
       );
     }
 
+    const resourceType =
+      item.mediaType === "video"
+        ? "video"
+        : "image";
+
     const formData = new FormData();
 
-    formData.append("file", image.file);
+    formData.append("file", item.file);
     formData.append("upload_preset", uploadPreset);
 
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
       {
         method: "POST",
         body: formData,
@@ -130,7 +152,9 @@ const Memories = () => {
     );
 
     if (!response.ok) {
-      throw new Error("Cloudinary upload failed.");
+      throw new Error(
+        `Cloudinary ${resourceType} upload failed.`
+      );
     }
 
     const data = await response.json();
@@ -138,8 +162,9 @@ const Memories = () => {
     return {
       url: data.secure_url,
       publicId: data.public_id,
-      visibility: image.visibility,
-      name: image.file.name,
+      visibility: item.visibility,
+      name: item.file.name,
+      mediaType: item.mediaType,
     };
   };
 
@@ -162,8 +187,10 @@ const Memories = () => {
       return;
     }
 
-    if (images.length === 0) {
-      setError("কমপক্ষে একটি ছবি নির্বাচন করুন।");
+    if (media.length === 0) {
+      setError(
+        "কমপক্ষে একটি ছবি অথবা ভিডিও নির্বাচন করুন।"
+      );
       return;
     }
 
@@ -171,15 +198,17 @@ const Memories = () => {
       setUploading(true);
       setProgress(0);
 
-      const uploadedImages: UploadedImage[] = [];
+      const uploadedMedia: UploadedMedia[] = [];
 
-      for (let i = 0; i < images.length; i++) {
-        const uploaded = await uploadToCloudinary(images[i]);
+      for (let i = 0; i < media.length; i++) {
+        const uploaded = await uploadToCloudinary(
+          media[i]
+        );
 
-        uploadedImages.push(uploaded);
+        uploadedMedia.push(uploaded);
 
         const currentProgress = Math.round(
-          ((i + 1) / images.length) * 100
+          ((i + 1) / media.length) * 100
         );
 
         setProgress(currentProgress);
@@ -190,19 +219,30 @@ const Memories = () => {
         type,
         description: description.trim(),
         comment: comment.trim(),
-        images: uploadedImages,
+
+        // New structure
+        media: uploadedMedia,
+
+        // Keep this for compatibility if needed
+        images: uploadedMedia.filter(
+          (item) => item.mediaType === "image"
+        ),
+
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
 
       setSuccess("Memory সফলভাবে যোগ হয়েছে।");
 
-      // Form reset
+      media.forEach((item) => {
+        URL.revokeObjectURL(item.preview);
+      });
+
       setDate("");
       setType("");
       setDescription("");
       setComment("");
-      setImages([]);
+      setMedia([]);
       setProgress(0);
     } catch (error) {
       console.error("Memory save error:", error);
@@ -234,7 +274,9 @@ const Memories = () => {
 
           <Button
             variant="outline-dark"
-            onClick={() => navigate("/admin/dashboard")}
+            onClick={() =>
+              navigate("/admin/dashboard")
+            }
           >
             <FaArrowLeft className="me-2" />
             Dashboard
@@ -265,12 +307,14 @@ const Memories = () => {
           <Card.Body className="p-4">
             <Form onSubmit={handleSubmit}>
               <Row className="g-4">
-
                 {/* Date */}
                 <Col md={6}>
                   <Form.Group>
                     <Form.Label className="fw-semibold">
-                      Date <span className="text-danger">*</span>
+                      Date{" "}
+                      <span className="text-danger">
+                        *
+                      </span>
                     </Form.Label>
 
                     <Form.Control
@@ -289,7 +333,9 @@ const Memories = () => {
                   <Form.Group>
                     <Form.Label className="fw-semibold">
                       Type{" "}
-                      <span className="text-danger">*</span>
+                      <span className="text-danger">
+                        *
+                      </span>
                     </Form.Label>
 
                     <Form.Select
@@ -313,6 +359,14 @@ const Memories = () => {
 
                       <option value="general">
                         ❤️ General Memory
+                      </option>
+
+                      <option value="video">
+                        🎬 Video
+                      </option>
+
+                      <option value="program">
+                        🎉 Program / Event
                       </option>
 
                       <option value="other">
@@ -341,129 +395,166 @@ const Memories = () => {
                   </Form.Group>
                 </Col>
 
-                {/* Images */}
+                {/* Photos + Videos */}
                 <Col xs={12}>
                   <Form.Group>
                     <Form.Label className="fw-semibold">
-                      Photos{" "}
-                      <span className="text-danger">*</span>
+                      Photos & Videos{" "}
+                      <span className="text-danger">
+                        *
+                      </span>
                     </Form.Label>
 
                     <Form.Control
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       multiple
-                      onChange={handleImageSelect}
+                      onChange={handleMediaSelect}
                     />
 
                     <Form.Text className="text-muted">
-                      একসাথে একাধিক ছবি নির্বাচন করতে পারবেন।
+                      একসাথে একাধিক ছবি ও ভিডিও নির্বাচন
+                      করতে পারবেন।
                     </Form.Text>
                   </Form.Group>
                 </Col>
 
-                {/* Image Preview */}
-                {images.length > 0 && (
+                {/* Preview */}
+                {media.length > 0 && (
                   <Col xs={12}>
-                    <div className="mt-2">
-                      <h6 className="fw-bold mb-3">
-                        Selected Photos ({images.length})
-                      </h6>
+                    <h6 className="fw-bold mb-3">
+                      Selected Media ({media.length})
+                    </h6>
 
-                      <Row className="g-3">
-                        {images.map((image, index) => (
-                          <Col
-                            xs={12}
-                            sm={6}
-                            md={4}
-                            lg={3}
-                            key={`${image.file.name}-${index}`}
-                          >
-                            <Card className="h-100 border shadow-sm">
-                              <div
-                                style={{
-                                  height: "180px",
-                                  overflow: "hidden",
-                                }}
-                              >
+                    <Row className="g-3">
+                      {media.map((item, index) => (
+                        <Col
+                          xs={12}
+                          sm={6}
+                          md={4}
+                          lg={3}
+                          key={`${item.file.name}-${index}`}
+                        >
+                          <Card className="h-100 border shadow-sm">
+                            <div
+                              style={{
+                                height: "190px",
+                                overflow: "hidden",
+                                background: "#111",
+                              }}
+                            >
+                              {item.mediaType ===
+                              "video" ? (
+                                <video
+                                  src={item.preview}
+                                  className="w-100 h-100"
+                                  style={{
+                                    objectFit: "cover",
+                                  }}
+                                  controls
+                                />
+                              ) : (
                                 <Image
-                                  src={image.preview}
+                                  src={item.preview}
                                   className="w-100 h-100"
                                   style={{
                                     objectFit: "cover",
                                   }}
                                 />
+                              )}
+                            </div>
+
+                            <Card.Body className="p-3">
+                              <div className="mb-2">
+                                <Badge
+                                  bg={
+                                    item.mediaType ===
+                                    "video"
+                                      ? "primary"
+                                      : "secondary"
+                                  }
+                                >
+                                  {item.mediaType ===
+                                  "video" ? (
+                                    <>
+                                      <FaVideo className="me-1" />
+                                      Video
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FaImage className="me-1" />
+                                      Image
+                                    </>
+                                  )}
+                                </Badge>
                               </div>
 
-                              <Card.Body className="p-3">
-                                <div
-                                  className="small text-truncate mb-2"
-                                  title={image.file.name}
-                                >
-                                  {image.file.name}
-                                </div>
+                              <div
+                                className="small text-truncate mb-2"
+                                title={item.file.name}
+                              >
+                                {item.file.name}
+                              </div>
 
-                                {/* Visibility */}
-                                <div className="d-flex gap-2 mb-3">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={
-                                      image.visibility ===
+                              <div className="d-flex gap-2 mb-3">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={
+                                    item.visibility ===
+                                    "public"
+                                      ? "success"
+                                      : "outline-success"
+                                  }
+                                  onClick={() =>
+                                    changeVisibility(
+                                      index,
                                       "public"
-                                        ? "success"
-                                        : "outline-success"
-                                    }
-                                    onClick={() =>
-                                      changeVisibility(
-                                        index,
-                                        "public"
-                                      )
-                                    }
-                                  >
-                                    <FaGlobe className="me-1" />
-                                    Public
-                                  </Button>
-
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={
-                                      image.visibility ===
-                                      "private"
-                                        ? "dark"
-                                        : "outline-dark"
-                                    }
-                                    onClick={() =>
-                                      changeVisibility(
-                                        index,
-                                        "private"
-                                      )
-                                    }
-                                  >
-                                    <FaLock className="me-1" />
-                                    Private
-                                  </Button>
-                                </div>
+                                    )
+                                  }
+                                >
+                                  <FaGlobe className="me-1" />
+                                  Public
+                                </Button>
 
                                 <Button
                                   type="button"
-                                  variant="outline-danger"
                                   size="sm"
-                                  className="w-100"
+                                  variant={
+                                    item.visibility ===
+                                    "private"
+                                      ? "dark"
+                                      : "outline-dark"
+                                  }
                                   onClick={() =>
-                                    removeImage(index)
+                                    changeVisibility(
+                                      index,
+                                      "private"
+                                    )
                                   }
                                 >
-                                  <FaTrash className="me-1" />
-                                  Remove
+                                  <FaLock className="me-1" />
+                                  Private
                                 </Button>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        ))}
-                      </Row>
-                    </div>
+                              </div>
+
+                              <Button
+                                type="button"
+                                variant="outline-danger"
+                                size="sm"
+                                className="w-100"
+                                onClick={() =>
+                                  removeMedia(index)
+                                }
+                              >
+                                <FaTrash className="me-1" />
+                                Remove
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
                   </Col>
                 )}
 
@@ -486,13 +577,13 @@ const Memories = () => {
                   </Form.Group>
                 </Col>
 
-                {/* Upload Progress */}
+                {/* Progress */}
                 {uploading && (
                   <Col xs={12}>
                     <div>
                       <div className="d-flex justify-content-between mb-1">
                         <small className="text-muted">
-                          Uploading images...
+                          Uploading media...
                         </small>
 
                         <small className="fw-bold">
@@ -525,7 +616,6 @@ const Memories = () => {
                     </Button>
                   </div>
                 </Col>
-
               </Row>
             </Form>
           </Card.Body>

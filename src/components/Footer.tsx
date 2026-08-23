@@ -31,7 +31,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <Col xs={12} sm={6} lg={3}>
-            <h5 className="footer-title">Quick Links</h5>
+            <h5 className="footer-title ">Quick Links</h5>
 
             <ul className="footer-links">
               <li>
@@ -110,8 +110,8 @@ const Footer = () => {
         {/* Bottom */}
         <div className="footer-bottom">
           <small>
-            © {new Date().getFullYear()} Sprihan Halder. Made with{" "}
-            <FaHeart className="small-heart" /> by family.
+            © 2026 Sprihan Halder. Made with{" "}
+            <FaHeart className="small-heart" /> By Family.
           </small>
 
           <div className="mt-2">

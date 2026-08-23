@@ -11,6 +11,7 @@ import {
   Row,
   Col,
   Image,
+  Form,
 } from "react-bootstrap";
 import {
   FaEye,
@@ -21,8 +22,10 @@ import {
   FaArrowLeft,
   FaGlobe,
   FaLock,
+  FaVideo,
+  FaFilter,
 } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   collection,
   deleteDoc,
@@ -33,11 +36,12 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 
-interface MemoryImage {
+interface MemoryMedia {
   url: string;
   publicId: string;
   visibility: "public" | "private";
   name: string;
+  mediaType: "image" | "video";
 }
 
 interface Memory {
@@ -46,23 +50,33 @@ interface Memory {
   type: string;
   description: string;
   comment: string;
-  images: MemoryImage[];
+  media: MemoryMedia[];
 }
 
 const MemoryList = () => {
   const navigate = useNavigate();
 
-  const [memories, setMemories] = useState<Memory[]>([]);
+  const [searchParams, setSearchParams] =
+    useSearchParams();
+
+  const categoryFromUrl =
+    searchParams.get("type") || "all";
+
+  const [memories, setMemories] = useState<Memory[]>(
+    []
+  );
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] =
+    useState(false);
+
   const [selectedMemory, setSelectedMemory] =
     useState<Memory | null>(null);
 
-  const [deletingId, setDeletingId] = useState<string | null>(
-    null
-  );
+  const [deletingId, setDeletingId] =
+    useState<string | null>(null);
 
   const loadMemories = async () => {
     try {
@@ -76,22 +90,51 @@ const MemoryList = () => {
 
       const snapshot = await getDocs(memoriesQuery);
 
-      const data: Memory[] = snapshot.docs.map((item) => {
-        const raw = item.data();
+      const data: Memory[] = snapshot.docs.map(
+        (item) => {
+          const raw = item.data();
 
-        return {
-          id: item.id,
-          date: raw.date || "",
-          type: raw.type || "",
-          description: raw.description || "",
-          comment: raw.comment || "",
-          images: raw.images || [],
-        };
-      });
+          let media: MemoryMedia[] = [];
+
+          // New media
+          if (
+            Array.isArray(raw.media) &&
+            raw.media.length > 0
+          ) {
+            media = raw.media.map((item: any) => ({
+              ...item,
+              mediaType:
+                item.mediaType || "image",
+            }));
+          } else if (
+            Array.isArray(raw.images)
+          ) {
+            // Old images compatibility
+            media = raw.images.map(
+              (image: any) => ({
+                ...image,
+                mediaType: "image",
+              })
+            );
+          }
+
+          return {
+            id: item.id,
+            date: raw.date || "",
+            type: raw.type || "",
+            description: raw.description || "",
+            comment: raw.comment || "",
+            media,
+          };
+        }
+      );
 
       setMemories(data);
     } catch (error) {
-      console.error("Load memories error:", error);
+      console.error(
+        "Load memories error:",
+        error
+      );
 
       setError(
         "Memory load করতে সমস্যা হয়েছে। Firestore index/rules check করুন।"
@@ -108,13 +151,18 @@ const MemoryList = () => {
   const formatDate = (date: string) => {
     if (!date) return "-";
 
-    const parsedDate = new Date(`${date}T00:00:00`);
+    const parsedDate = new Date(
+      `${date}T00:00:00`
+    );
 
-    return parsedDate.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return parsedDate.toLocaleDateString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
   };
 
   const getTypeName = (type: string) => {
@@ -128,6 +176,12 @@ const MemoryList = () => {
       case "general":
         return "General Memory";
 
+      case "video":
+        return "Video";
+
+      case "program":
+        return "Program / Event";
+
       case "other":
         return "Other";
 
@@ -136,12 +190,57 @@ const MemoryList = () => {
     }
   };
 
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "prescription":
+        return "💊";
+
+      case "travel":
+        return "✈️";
+
+      case "general":
+        return "❤️";
+
+      case "video":
+        return "🎬";
+
+      case "program":
+        return "🎉";
+
+      case "other":
+        return "📌";
+
+      default:
+        return "📁";
+    }
+  };
+
+  const handleCategoryChange = (
+    value: string
+  ) => {
+    if (value === "all") {
+      setSearchParams({});
+    } else {
+      setSearchParams({ type: value });
+    }
+  };
+
+  const filteredMemories =
+    categoryFromUrl === "all"
+      ? memories
+      : memories.filter(
+          (memory) =>
+            memory.type === categoryFromUrl
+        );
+
   const handleView = (memory: Memory) => {
     setSelectedMemory(memory);
     setShowDetails(true);
   };
 
-  const handleDelete = async (memory: Memory) => {
+  const handleDelete = async (
+    memory: Memory
+  ) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete this memory?\n\n${formatDate(
         memory.date
@@ -153,20 +252,31 @@ const MemoryList = () => {
     try {
       setDeletingId(memory.id);
 
-      await deleteDoc(doc(db, "memories", memory.id));
-
-      setMemories((prev) =>
-        prev.filter((item) => item.id !== memory.id)
+      await deleteDoc(
+        doc(db, "memories", memory.id)
       );
 
-      if (selectedMemory?.id === memory.id) {
+      setMemories((prev) =>
+        prev.filter(
+          (item) => item.id !== memory.id
+        )
+      );
+
+      if (
+        selectedMemory?.id === memory.id
+      ) {
         setSelectedMemory(null);
         setShowDetails(false);
       }
     } catch (error) {
-      console.error("Delete memory error:", error);
+      console.error(
+        "Delete memory error:",
+        error
+      );
 
-      setError("Memory delete করতে সমস্যা হয়েছে।");
+      setError(
+        "Memory delete করতে সমস্যা হয়েছে।"
+      );
     } finally {
       setDeletingId(null);
     }
@@ -201,7 +311,9 @@ const MemoryList = () => {
             <Button
               variant="dark"
               onClick={() =>
-                navigate("/admin/memories/add")
+                navigate(
+                  "/admin/memories/add"
+                )
               }
             >
               <FaPlus className="me-2" />
@@ -220,6 +332,59 @@ const MemoryList = () => {
           </Alert>
         )}
 
+        {/* Filter */}
+        <Card className="border-0 shadow-sm mb-4">
+          <Card.Body>
+            <Row className="align-items-center g-3">
+              <Col md={4}>
+                <h6 className="fw-bold mb-0">
+                  <FaFilter className="me-2" />
+                  Memory Category
+                </h6>
+              </Col>
+
+              <Col md={8}>
+                <Form.Select
+                  value={categoryFromUrl}
+                  onChange={(e) =>
+                    handleCategoryChange(
+                      e.target.value
+                    )
+                  }
+                >
+                  <option value="all">
+                    All Memories
+                  </option>
+
+                  <option value="prescription">
+                    💊 Prescription
+                  </option>
+
+                  <option value="travel">
+                    ✈️ Travel
+                  </option>
+
+                  <option value="general">
+                    ❤️ General Memory
+                  </option>
+
+                  <option value="video">
+                    🎬 Video
+                  </option>
+
+                  <option value="program">
+                    🎉 Program / Event
+                  </option>
+
+                  <option value="other">
+                    📌 Other
+                  </option>
+                </Form.Select>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+
         <Card className="border-0 shadow-sm">
           <Card.Body className="p-0">
             {loading ? (
@@ -230,7 +395,8 @@ const MemoryList = () => {
                   Loading memories...
                 </p>
               </div>
-            ) : memories.length === 0 ? (
+            ) : filteredMemories.length ===
+              0 ? (
               <div className="text-center py-5 px-3">
                 <FaImages className="fs-1 text-muted mb-3" />
 
@@ -239,33 +405,42 @@ const MemoryList = () => {
                 </h5>
 
                 <p className="text-muted">
-                  এখনো কোনো Memory যোগ করা হয়নি।
+                  এই category-তে কোনো Memory
+                  নেই।
                 </p>
 
                 <Button
                   variant="dark"
                   onClick={() =>
-                    navigate("/admin/memories/add")
+                    navigate(
+                      "/admin/memories/add"
+                    )
                   }
                 >
                   <FaPlus className="me-2" />
-                  Add First Memory
+                  Add Memory
                 </Button>
               </div>
             ) : (
               <div className="table-responsive">
                 <Table
                   hover
-                  responsive
                   className="mb-0 align-middle"
                 >
                   <thead className="table-light">
                     <tr>
-                      <th className="px-4">Date</th>
+                      <th className="px-4">
+                        Date
+                      </th>
+
                       <th>Type</th>
+
                       <th>Description</th>
-                      <th>Photos</th>
+
+                      <th>Media</th>
+
                       <th>Visibility</th>
+
                       <th className="text-end px-4">
                         Action
                       </th>
@@ -273,117 +448,160 @@ const MemoryList = () => {
                   </thead>
 
                   <tbody>
-                    {memories.map((memory) => {
-                      const publicCount =
-                        memory.images.filter(
-                          (image) =>
-                            image.visibility === "public"
-                        ).length;
+                    {filteredMemories.map(
+                      (memory) => {
+                        const publicCount =
+                          memory.media.filter(
+                            (item) =>
+                              item.visibility ===
+                              "public"
+                          ).length;
 
-                      const privateCount =
-                        memory.images.filter(
-                          (image) =>
-                            image.visibility === "private"
-                        ).length;
+                        const privateCount =
+                          memory.media.filter(
+                            (item) =>
+                              item.visibility ===
+                              "private"
+                          ).length;
 
-                      return (
-                        <tr key={memory.id}>
-                          <td className="px-4 fw-semibold">
-                            {formatDate(memory.date)}
-                          </td>
+                        const videoCount =
+                          memory.media.filter(
+                            (item) =>
+                              item.mediaType ===
+                              "video"
+                          ).length;
 
-                          <td>
-                            <Badge bg="secondary">
-                              {getTypeName(memory.type)}
-                            </Badge>
-                          </td>
-
-                          <td
-                            style={{
-                              maxWidth: "280px",
-                            }}
-                          >
-                            <div className="text-truncate">
-                              {memory.description || "-"}
-                            </div>
-                          </td>
-
-                          <td>
-                            <span className="fw-semibold">
-                              <FaImages className="me-1" />
-                              {memory.images.length}
-                            </span>
-                          </td>
-
-                          <td>
-                            <div className="d-flex gap-1 flex-wrap">
-                              {publicCount > 0 && (
-                                <Badge bg="success">
-                                  <FaGlobe className="me-1" />
-                                  {publicCount}
-                                </Badge>
+                        return (
+                          <tr key={memory.id}>
+                            <td className="px-4 fw-semibold">
+                              {formatDate(
+                                memory.date
                               )}
+                            </td>
 
-                              {privateCount > 0 && (
-                                <Badge bg="dark">
-                                  <FaLock className="me-1" />
-                                  {privateCount}
-                                </Badge>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="text-end px-4">
-                            <div className="d-flex justify-content-end gap-2">
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                title="View"
-                                onClick={() =>
-                                  handleView(memory)
-                                }
-                              >
-                                <FaEye />
-                              </Button>
-
-                              <Button
-                                variant="outline-warning"
-                                size="sm"
-                                title="Edit"
-                                onClick={() =>
-                                  navigate(
-                                    `/admin/memories/edit/${memory.id}`
-                                  )
-                                }
-                              >
-                                <FaEdit />
-                              </Button>
-
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                title="Delete"
-                                disabled={
-                                  deletingId === memory.id
-                                }
-                                onClick={() =>
-                                  handleDelete(memory)
-                                }
-                              >
-                                {deletingId === memory.id ? (
-                                  <Spinner
-                                    animation="border"
-                                    size="sm"
-                                  />
-                                ) : (
-                                  <FaTrash />
+                            <td>
+                              <Badge bg="secondary">
+                                {getTypeIcon(
+                                  memory.type
+                                )}{" "}
+                                {getTypeName(
+                                  memory.type
                                 )}
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                              </Badge>
+                            </td>
+
+                            <td
+                              style={{
+                                maxWidth:
+                                  "280px",
+                              }}
+                            >
+                              <div className="text-truncate">
+                                {memory.description ||
+                                  "-"}
+                              </div>
+                            </td>
+
+                            <td>
+                              <span className="fw-semibold">
+                                {memory.media.length}{" "}
+                                Items
+                              </span>
+
+                              {videoCount >
+                                0 && (
+                                <Badge
+                                  bg="primary"
+                                  className="ms-2"
+                                >
+                                  <FaVideo className="me-1" />
+                                  {videoCount}
+                                </Badge>
+                              )}
+                            </td>
+
+                            <td>
+                              <div className="d-flex gap-1 flex-wrap">
+                                {publicCount >
+                                  0 && (
+                                  <Badge bg="success">
+                                    <FaGlobe className="me-1" />
+                                    {
+                                      publicCount
+                                    }
+                                  </Badge>
+                                )}
+
+                                {privateCount >
+                                  0 && (
+                                  <Badge bg="dark">
+                                    <FaLock className="me-1" />
+                                    {
+                                      privateCount
+                                    }
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="text-end px-4">
+                              <div className="d-flex justify-content-end gap-2">
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  title="View"
+                                  onClick={() =>
+                                    handleView(
+                                      memory
+                                    )
+                                  }
+                                >
+                                  <FaEye />
+                                </Button>
+
+                                <Button
+                                  variant="outline-warning"
+                                  size="sm"
+                                  title="Edit"
+                                  onClick={() =>
+                                    navigate(
+                                      `/admin/memories/edit/${memory.id}`
+                                    )
+                                  }
+                                >
+                                  <FaEdit />
+                                </Button>
+
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  title="Delete"
+                                  disabled={
+                                    deletingId ===
+                                    memory.id
+                                  }
+                                  onClick={() =>
+                                    handleDelete(
+                                      memory
+                                    )
+                                  }
+                                >
+                                  {deletingId ===
+                                  memory.id ? (
+                                    <Spinner
+                                      animation="border"
+                                      size="sm"
+                                    />
+                                  ) : (
+                                    <FaTrash />
+                                  )}
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      }
+                    )}
                   </tbody>
                 </Table>
               </div>
@@ -395,7 +613,9 @@ const MemoryList = () => {
       {/* Details Modal */}
       <Modal
         show={showDetails}
-        onHide={() => setShowDetails(false)}
+        onHide={() =>
+          setShowDetails(false)
+        }
         size="xl"
         centered
       >
@@ -415,7 +635,9 @@ const MemoryList = () => {
                   </small>
 
                   <div className="fw-semibold">
-                    {formatDate(selectedMemory.date)}
+                    {formatDate(
+                      selectedMemory.date
+                    )}
                   </div>
                 </Col>
 
@@ -426,18 +648,27 @@ const MemoryList = () => {
 
                   <div>
                     <Badge bg="secondary">
-                      {getTypeName(selectedMemory.type)}
+                      {getTypeIcon(
+                        selectedMemory.type
+                      )}{" "}
+                      {getTypeName(
+                        selectedMemory.type
+                      )}
                     </Badge>
                   </div>
                 </Col>
 
                 <Col md={4}>
                   <small className="text-muted">
-                    Photos
+                    Media
                   </small>
 
                   <div className="fw-semibold">
-                    {selectedMemory.images.length} Photos
+                    {
+                      selectedMemory.media
+                        .length
+                    }{" "}
+                    Items
                   </div>
                 </Col>
               </Row>
@@ -449,7 +680,9 @@ const MemoryList = () => {
                   </h6>
 
                   <p className="text-muted mb-0">
-                    {selectedMemory.description}
+                    {
+                      selectedMemory.description
+                    }
                   </p>
                 </div>
               )}
@@ -467,41 +700,75 @@ const MemoryList = () => {
               )}
 
               <h6 className="fw-bold mb-3">
-                Photos
+                Photos & Videos
               </h6>
 
               <Row className="g-3">
-                {selectedMemory.images.map(
-                  (image, index) => (
+                {selectedMemory.media.map(
+                  (item, index) => (
                     <Col
                       xs={12}
                       sm={6}
                       md={4}
                       lg={3}
-                      key={`${image.publicId}-${index}`}
+                      key={`${item.publicId}-${index}`}
                     >
                       <Card className="border shadow-sm h-100">
                         <div
                           style={{
                             height: "190px",
                             overflow: "hidden",
+                            background: "#111",
                           }}
                         >
-                          <Image
-                            src={image.url}
-                            className="w-100 h-100"
-                            style={{
-                              objectFit: "cover",
-                            }}
-                          />
+                          {item.mediaType ===
+                          "video" ? (
+                            <video
+                              src={item.url}
+                              className="w-100 h-100"
+                              style={{
+                                objectFit: "cover",
+                              }}
+                              controls
+                            />
+                          ) : (
+                            <Image
+                              src={item.url}
+                              className="w-100 h-100"
+                              style={{
+                                objectFit: "cover",
+                              }}
+                            />
+                          )}
                         </div>
 
                         <Card.Body className="p-2">
-                          <div className="small text-truncate mb-2">
-                            {image.name}
+                          <div className="mb-2">
+                            <Badge
+                              bg={
+                                item.mediaType ===
+                                "video"
+                                  ? "primary"
+                                  : "secondary"
+                              }
+                            >
+                              {item.mediaType ===
+                              "video" ? (
+                                <>
+                                  <FaVideo className="me-1" />
+                                  Video
+                                </>
+                              ) : (
+                                "Image"
+                              )}
+                            </Badge>
                           </div>
 
-                          {image.visibility ===
+                          <div className="small text-truncate mb-2">
+                            {item.name}
+                          </div>
+
+                          {item.visibility ===
                           "public" ? (
                             <Badge bg="success">
                               <FaGlobe className="me-1" />
@@ -542,7 +809,9 @@ const MemoryList = () => {
 
           <Button
             variant="secondary"
-            onClick={() => setShowDetails(false)}
+            onClick={() =>
+              setShowDetails(false)
+            }
           >
             Close
           </Button>
