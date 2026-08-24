@@ -27,15 +27,11 @@ import {
   FaMapMarkerAlt,
   FaCamera,
   FaBlog,
+  FaUserPlus,
+  FaComments,
 } from "react-icons/fa";
 
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  setDoc,
-} from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 
 import { auth, db } from "../firebase/config";
 
@@ -74,6 +70,7 @@ const Dashboard = () => {
   const [uploadingProfile, setUploadingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
+  const [documentCount, setDocumentCount] = useState(0);
 
   // =========================
   // Load Profile
@@ -98,15 +95,13 @@ const Dashboard = () => {
             data.name ||
               user.displayName ||
               user.email?.split("@")[0] ||
-              "Admin"
+              "Admin",
           );
 
           setProfilePhoto(data.photoURL || "");
         } else {
           setProfileName(
-            user.displayName ||
-              user.email?.split("@")[0] ||
-              "Admin"
+            user.displayName || user.email?.split("@")[0] || "Admin",
           );
         }
       } catch (error) {
@@ -127,9 +122,7 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        const memorySnapshot = await getDocs(
-          collection(db, "memories")
-        );
+        const memorySnapshot = await getDocs(collection(db, "memories"));
 
         const newCounts = {
           prescription: 0,
@@ -140,35 +133,27 @@ const Dashboard = () => {
           other: 0,
         };
 
+        const documentSnapshot = await getDocs(collection(db, "documents"));
+
+        setDocumentCount(documentSnapshot.size);
+
         memorySnapshot.docs.forEach((item) => {
           const data = item.data();
           const type = data.type;
 
-          if (
-            Object.prototype.hasOwnProperty.call(
-              newCounts,
-              type
-            )
-          ) {
-            newCounts[
-              type as keyof typeof newCounts
-            ]++;
+          if (Object.prototype.hasOwnProperty.call(newCounts, type)) {
+            newCounts[type as keyof typeof newCounts]++;
           }
         });
 
         setCounts(newCounts);
 
         // Blog count
-        const blogSnapshot = await getDocs(
-          collection(db, "blogPosts")
-        );
+        const blogSnapshot = await getDocs(collection(db, "blogPosts"));
 
         setBlogCount(blogSnapshot.size);
       } catch (error) {
-        console.error(
-          "Dashboard stats error:",
-          error
-        );
+        console.error("Dashboard stats error:", error);
       } finally {
         setLoading(false);
       }
@@ -192,9 +177,7 @@ const Dashboard = () => {
   // =========================
   // Profile File Select
   // =========================
-  const handleProfileFile = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleProfileFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (!file) return;
@@ -205,9 +188,7 @@ const Dashboard = () => {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setProfileError(
-        "Profile photo সর্বোচ্চ 5MB হতে পারবে।"
-      );
+      setProfileError("Profile photo সর্বোচ্চ 5MB হতে পারবে।");
       return;
     }
 
@@ -224,126 +205,114 @@ const Dashboard = () => {
   // Upload Profile Photo
   // =========================
   const handleProfileUpload = async () => {
-  if (!profileFile) {
-    setProfileError("একটি ছবি নির্বাচন করুন।");
-    return;
-  }
+    if (!profileFile) {
+      setProfileError("একটি ছবি নির্বাচন করুন।");
+      return;
+    }
 
-  const user = auth.currentUser;
+    const user = auth.currentUser;
 
-  if (!user) {
-    setProfileError("Admin login পাওয়া যায়নি।");
-    return;
-  }
+    if (!user) {
+      setProfileError("Admin login পাওয়া যায়নি।");
+      return;
+    }
 
-  try {
-    setUploadingProfile(true);
-    setProfileError("");
-    setProfileSuccess("");
+    try {
+      setUploadingProfile(true);
+      setProfileError("");
+      setProfileSuccess("");
 
-    const cloudName =
-      import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
-    const uploadPreset =
-      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
-    if (!cloudName || !uploadPreset) {
-      throw new Error(
-        "Cloudinary configuration পাওয়া যায়নি।"
+      if (!cloudName || !uploadPreset) {
+        throw new Error("Cloudinary configuration পাওয়া যায়নি।");
+      }
+
+      // =========================
+      // Cloudinary Upload
+      // =========================
+
+      const formData = new FormData();
+
+      formData.append("file", profileFile);
+      formData.append("upload_preset", uploadPreset);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
       );
-    }
 
-    // =========================
-    // Cloudinary Upload
-    // =========================
-
-    const formData = new FormData();
-
-    formData.append("file", profileFile);
-    formData.append("upload_preset", uploadPreset);
-
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      {
-        method: "POST",
-        body: formData,
+      if (!response.ok) {
+        throw new Error("Profile photo upload failed.");
       }
-    );
 
-    if (!response.ok) {
-      throw new Error("Profile photo upload failed.");
-    }
+      const data = await response.json();
 
-    const data = await response.json();
+      const photoURL = data.secure_url;
 
-    const photoURL = data.secure_url;
+      // =========================
+      // Save Public Profile Photo
+      // =========================
 
-    // =========================
-    // Save Public Profile Photo
-    // =========================
+      await setDoc(
+        doc(db, "siteSettings", "profile"),
+        {
+          photoURL,
+          updatedAt: new Date(),
+        },
+        {
+          merge: true,
+        },
+      );
 
-    await setDoc(
-      doc(db, "siteSettings", "profile"),
-      {
-        photoURL,
-        updatedAt: new Date(),
-      },
-      {
-        merge: true,
+      // =========================
+      // Also Save Admin Profile
+      // =========================
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          name: profileName || user.email?.split("@")[0] || "Admin",
+          email: user.email || "",
+          photoURL,
+          updatedAt: new Date(),
+        },
+        {
+          merge: true,
+        },
+      );
+
+      // =========================
+      // Update UI
+      // =========================
+
+      setProfilePhoto(photoURL);
+      setProfileFile(null);
+
+      if (profilePreview) {
+        URL.revokeObjectURL(profilePreview);
       }
-    );
 
-    // =========================
-    // Also Save Admin Profile
-    // =========================
+      setProfilePreview("");
 
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        name:
-          profileName ||
-          user.email?.split("@")[0] ||
-          "Admin",
-        email: user.email || "",
-        photoURL,
-        updatedAt: new Date(),
-      },
-      {
-        merge: true,
-      }
-    );
+      setProfileSuccess("Profile photo সফলভাবে পরিবর্তন হয়েছে।");
+    } catch (error) {
+      console.error("Profile photo upload error:", error);
 
-    // =========================
-    // Update UI
-    // =========================
-
-    setProfilePhoto(photoURL);
-    setProfileFile(null);
-
-    if (profilePreview) {
-      URL.revokeObjectURL(profilePreview);
+      setProfileError(
+        error instanceof Error
+          ? error.message
+          : "Profile photo upload করতে সমস্যা হয়েছে।",
+      );
+    } finally {
+      setUploadingProfile(false);
     }
-
-    setProfilePreview("");
-
-    setProfileSuccess(
-      "Profile photo সফলভাবে পরিবর্তন হয়েছে।"
-    );
-  } catch (error) {
-    console.error(
-      "Profile photo upload error:",
-      error
-    );
-
-    setProfileError(
-      error instanceof Error
-        ? error.message
-        : "Profile photo upload করতে সমস্যা হয়েছে।"
-    );
-  } finally {
-    setUploadingProfile(false);
-  }
-};
+  };
 
   // =========================
   // Close Profile Modal
@@ -360,10 +329,7 @@ const Dashboard = () => {
     setShowProfileModal(false);
   };
 
-  const totalMemories = Object.values(counts).reduce(
-    (a, b) => a + b,
-    0
-  );
+  const totalMemories = Object.values(counts).reduce((a, b) => a + b, 0);
 
   // =========================
   // Categories
@@ -414,13 +380,10 @@ const Dashboard = () => {
   ];
 
   const getCount = (type: string) => {
-    return (
-      counts[type as keyof typeof counts] || 0
-    );
+    return counts[type as keyof typeof counts] || 0;
   };
 
-  const displayPhoto =
-    profilePreview || profilePhoto;
+  const displayPhoto = profilePreview || profilePhoto;
 
   return (
     <div className="min-vh-100 bg-light">
@@ -432,21 +395,13 @@ const Dashboard = () => {
           <div className="d-flex justify-content-between align-items-center py-3">
             {/* Logo */}
             <div className="d-flex align-items-center">
-              
-
               <div>
-                <small className="fw-bold mb-0">
-                 Welcome ! Sprihan Halder
-                </small>
-
-                
+                <small className="fw-bold mb-0">Welcome ! Sprihan Halder</small>
               </div>
             </div>
 
             {/* Right */}
             <div className="d-flex align-items-center gap-2">
-             
-
               {/* Profile */}
               <Button
                 variant="light"
@@ -456,16 +411,11 @@ const Dashboard = () => {
                   height: "44px",
                   overflow: "hidden",
                 }}
-                onClick={() =>
-                  setShowProfileModal(true)
-                }
+                onClick={() => setShowProfileModal(true)}
                 title="Profile"
               >
                 {profileLoading ? (
-                  <Spinner
-                    animation="border"
-                    size="sm"
-                  />
+                  <Spinner animation="border" size="sm" />
                 ) : displayPhoto ? (
                   <Image
                     src={displayPhoto}
@@ -475,9 +425,7 @@ const Dashboard = () => {
                     }}
                   />
                 ) : (
-                  <span style={{ fontSize: "20px" }}>
-                    👤
-                  </span>
+                  <span style={{ fontSize: "20px" }}>👤</span>
                 )}
               </Button>
 
@@ -488,9 +436,7 @@ const Dashboard = () => {
                 onClick={handleLogout}
               >
                 <FaSignOutAlt className="me-2" />
-                <span className="d-none d-sm-inline">
-                  Logout
-                </span>
+                <span className="d-none d-sm-inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -508,31 +454,19 @@ const Dashboard = () => {
         ========================== */}
         <Row className="g-4 mb-5">
           <Col xs={12} md={4}>
-            <Card className="border-0 shadow-sm h-100">
+            <Card className="dashboard-stat-card h-100">
               <Card.Body className="p-4">
                 <div className="d-flex align-items-center">
-                  <div
-                    className="rounded-3 bg-dark text-white d-flex align-items-center justify-content-center me-3"
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      fontSize: "26px",
-                    }}
-                  >
+                  <div className="dashboard-stat-icon bg-dark text-white me-3">
                     <FaImages />
                   </div>
 
                   <div>
-                    <div className="text-muted">
-                      Total Memories
-                    </div>
+                    <div className="dashboard-stat-label">Total Memories</div>
 
-                    <h2 className="fw-bold mb-0">
+                    <h2 className="dashboard-stat-number">
                       {loading ? (
-                        <Spinner
-                          animation="border"
-                          size="sm"
-                        />
+                        <Spinner animation="border" size="sm" />
                       ) : (
                         totalMemories
                       )}
@@ -545,11 +479,9 @@ const Dashboard = () => {
 
           <Col xs={12} md={4}>
             <Card
-              className="border-0 shadow-sm h-100"
+              className="dashboard-stat-card h-100"
               style={{ cursor: "pointer" }}
-              onClick={() =>
-                navigate("/admin/blogs")
-              }
+              onClick={() => navigate("/admin/blogs")}
             >
               <Card.Body className="p-4">
                 <div className="d-flex align-items-center">
@@ -565,16 +497,11 @@ const Dashboard = () => {
                   </div>
 
                   <div>
-                    <div className="text-muted">
-                      Blog Posts
-                    </div>
+                    <div className="dashboard-stat-label">Total Blog Posts</div>
 
-                    <h2 className="fw-bold mb-0">
+                    <h2 className="dashboard-stat-number">
                       {loading ? (
-                        <Spinner
-                          animation="border"
-                          size="sm"
-                        />
+                        <Spinner animation="border" size="sm" />
                       ) : (
                         blogCount
                       )}
@@ -586,28 +513,34 @@ const Dashboard = () => {
           </Col>
 
           <Col xs={12} md={4}>
-            <Card className="border-0 shadow-sm h-100">
+            <Card
+              className="dashboard-stat-card h-100"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate("/admin/documents")}
+            >
               <Card.Body className="p-4">
                 <div className="d-flex align-items-center">
                   <div
-                    className="rounded-3 bg-success text-white d-flex align-items-center justify-content-center me-3"
+                    className="rounded-3 bg-danger text-white d-flex align-items-center justify-content-center me-3"
                     style={{
                       width: "60px",
                       height: "60px",
                       fontSize: "26px",
                     }}
                   >
-                    👶
+                    📄
                   </div>
 
                   <div>
-                    <div className="text-muted">
-                      Sprihan Blog
-                    </div>
+                    <div className="dashboard-stat-label"> Total Documents</div>
 
-                    <h5 className="fw-bold mb-0">
-                      Beautiful Memories
-                    </h5>
+                    <h2 className="dashboard-stat-number">
+                      {loading ? (
+                        <Spinner animation="border" size="sm" />
+                      ) : (
+                        documentCount
+                      )}
+                    </h2>
                   </div>
                 </div>
               </Card.Body>
@@ -619,9 +552,7 @@ const Dashboard = () => {
             Categories
         ========================== */}
         <div className="mb-4">
-          <h4 className="fw-bold mb-1">
-            Memories by Category
-          </h4>
+          <h4 className="fw-bold mb-1">Memories by Category</h4>
 
           <p className="text-muted mb-0">
             Click a category to view its memories.
@@ -630,75 +561,51 @@ const Dashboard = () => {
 
         <Row className="g-4">
           {categories.map((category) => (
-            <Col
-              xs={12}
-              sm={6}
-              lg={4}
-              key={category.type}
-            >
+            <Col xs={12} sm={6} lg={3} key={category.type}>
               <Card
-                className="border-0 shadow-sm h-100"
+                className="dashboard-category-card h-100"
                 style={{
                   cursor: "pointer",
-                  transition:
-                    "transform 0.2s ease, box-shadow 0.2s ease",
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
                 }}
                 onClick={() =>
-                  navigate(
-                    `/admin/memories?type=${category.type}`
-                  )
+                  navigate(`/admin/memories?type=${category.type}`)
                 }
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform =
-                    "translateY(-5px)";
+                  e.currentTarget.style.transform = "translateY(-5px)";
                   e.currentTarget.style.boxShadow =
                     "0 10px 25px rgba(0,0,0,0.10)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform =
-                    "translateY(0)";
+                  e.currentTarget.style.transform = "translateY(0)";
                   e.currentTarget.style.boxShadow = "";
                 }}
               >
                 <Card.Body className="p-4">
                   <div className="d-flex justify-content-between align-items-start">
                     <div
-                      className={`rounded-3 bg-${category.bg} text-white d-flex align-items-center justify-content-center`}
-                      style={{
-                        width: "58px",
-                        height: "58px",
-                        fontSize: "25px",
-                      }}
+                      className={`dashboard-category-icon bg-${category.bg} text-white`}
                     >
                       {category.icon}
                     </div>
 
                     <div className="text-end">
-                      <h2 className="fw-bold mb-0">
+                      <h2 className="dashboard-category-count">
                         {loading ? (
-                          <Spinner
-                            animation="border"
-                            size="sm"
-                          />
+                          <Spinner animation="border" size="sm" />
                         ) : (
                           getCount(category.type)
                         )}
                       </h2>
 
-                      <small className="text-muted">
-                        Memories
-                      </small>
+                      <small className="text-muted">Memories</small>
                     </div>
                   </div>
 
                   <div className="mt-4">
-                    <h5 className="fw-bold mb-1">
-                      {category.title}
-                    </h5>
+                    <h5 className="fw-bold mb-1">{category.title}</h5>
 
-                    <p className="text-muted mb-0">
-                      {category.description}
-                    </p>
+                    <p className="text-muted mb-0">{category.description}</p>
                   </div>
                 </Card.Body>
               </Card>
@@ -710,76 +617,96 @@ const Dashboard = () => {
             Quick Actions
         ========================== */}
         <div className="mt-5">
-          <h4 className="fw-bold mb-3">
-            Quick Actions
-          </h4>
+          <h4 className="fw-bold mb-3">Quick Actions</h4>
 
           <Row className="g-3">
-            <Col xs={12} md={4}>
+            <Col xs={12} md={3}>
               <Button
                 variant="dark"
                 className="w-100 py-3"
-                onClick={() =>
-                  navigate(
-                    "/admin/memories/add"
-                  )
-                }
+                onClick={() => navigate("/admin/memories/add")}
               >
                 <FaImages className="me-2" />
                 Add New Memory
               </Button>
             </Col>
 
-            <Col xs={12} md={4}>
+            <Col xs={12} md={3}>
               <Button
                 variant="outline-dark"
                 className="w-100 py-3"
-                onClick={() =>
-                  navigate(
-                    "/admin/memories"
-                  )
-                }
+                onClick={() => navigate("/admin/memories")}
               >
                 <FaImages className="me-2" />
                 View All Memories
               </Button>
             </Col>
 
-            <Col xs={12} md={4}>
+            <Col xs={12} md={3}>
               <Button
                 variant="primary"
                 className="w-100 py-3"
-                onClick={() =>
-                  navigate(
-                    "/admin/blogs/add"
-                  )
-                }
+                onClick={() => navigate("/admin/blogs/add")}
               >
                 <FaPen className="me-2" />
                 Write Blog Post
               </Button>
             </Col>
+
+            <Col xs={12} md={3}>
+          <Button
+            variant="danger"
+            className="w-100 py-3"
+            onClick={() => navigate("/admin/documents/add")}
+          >
+            📄
+            <span className="ms-2">Upload Document</span>
+          </Button>
+        </Col>
+          {/* Register User */}
+  <Col xs={12} md={3}>
+    <Button
+      variant="success"
+      className="w-100 py-3"
+      onClick={() =>
+        navigate("/admin/users/register")
+      }
+    >
+      <FaUserPlus className="me-2" />
+      Register User
+    </Button>
+  </Col>
+
+
+  {/* Messages */}
+  <Col xs={12} md={3}>
+    <Button
+      variant="primary"
+      className="w-100 py-3"
+      onClick={() =>
+        navigate("/users")
+      }
+    >
+      <FaComments className="me-2" />
+      Messages
+    </Button>
+  </Col>
           </Row>
         </div>
+
+        
 
         {/* =========================
             Profile Card
         ========================== */}
-      
       </Container>
 
       {/* =========================
           Profile Modal
       ========================== */}
-      <Modal
-        show={showProfileModal}
-        onHide={closeProfileModal}
-        centered
-      >
+      <Modal show={showProfileModal} onHide={closeProfileModal} centered>
         <Modal.Header closeButton>
-          <Modal.Title className="fw-bold">
-            Admin Profile
-          </Modal.Title>
+          <Modal.Title className="fw-bold">Admin Profile</Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
@@ -787,19 +714,13 @@ const Dashboard = () => {
             <Alert
               variant="danger"
               dismissible
-              onClose={() =>
-                setProfileError("")
-              }
+              onClose={() => setProfileError("")}
             >
               {profileError}
             </Alert>
           )}
 
-          {profileSuccess && (
-            <Alert variant="success">
-              {profileSuccess}
-            </Alert>
-          )}
+          {profileSuccess && <Alert variant="success">{profileSuccess}</Alert>}
 
           <div className="text-center mb-4">
             <div
@@ -825,16 +746,11 @@ const Dashboard = () => {
               )}
             </div>
 
-
-            <small className="text-muted">
-              {profileEmail}
-            </small>
+            <small className="text-muted">{profileEmail}</small>
           </div>
 
           <Form.Group>
-            <Form.Label className="fw-semibold">
-              Profile Photo
-            </Form.Label>
+            <Form.Label className="fw-semibold">Profile Photo</Form.Label>
 
             <Form.Control
               type="file"
@@ -861,16 +777,11 @@ const Dashboard = () => {
           <Button
             variant="dark"
             onClick={handleProfileUpload}
-            disabled={
-              uploadingProfile || !profileFile
-            }
+            disabled={uploadingProfile || !profileFile}
           >
             {uploadingProfile ? (
               <>
-                <Spinner
-                  size="sm"
-                  className="me-2"
-                />
+                <Spinner size="sm" className="me-2" />
                 Uploading...
               </>
             ) : (

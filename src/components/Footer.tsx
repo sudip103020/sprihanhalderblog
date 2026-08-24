@@ -8,6 +8,7 @@ import {
   FaFacebookF,
   FaGithub,
   FaGlobe,
+  FaArrowRight,
 } from "react-icons/fa";
 
 const Footer = () => {
@@ -15,46 +16,56 @@ const Footer = () => {
     <footer className="footer">
       <Container>
         <Row className="gy-4">
-          {/* About */}
+          {/* Brand / About */}
           <Col xs={12} md={6} lg={4}>
             <div className="footer-brand">
-              <h4>
+              <h4 className="footer-logo">
                 ✍️ <span>SprihanBlog</span>
               </h4>
 
-              <p>
-                A personal blog where memories, technology, projects, and
-                experiences are shared beautifully.
+              <p className="footer-description">
+                A little place filled with precious memories, beautiful
+                moments, family stories, and the journey of our little one.
               </p>
+
+              
             </div>
           </Col>
 
           {/* Quick Links */}
           <Col xs={12} sm={6} lg={3}>
-            <h5 className="footer-title ">Quick Links</h5>
+            <h5 className="footer-title">Quick Links</h5>
 
             <ul className="footer-links">
               <li>
-                <NavLink to="/">Home</NavLink>
+                <NavLink to="/">
+                  <FaArrowRight /> Home
+                </NavLink>
               </li>
 
               <li>
-                <NavLink to="/about">About</NavLink>
+                <NavLink to="/about">
+                  <FaArrowRight /> About
+                </NavLink>
               </li>
 
               <li>
-                <NavLink to="/memory-album">Memory Album</NavLink>
+                <NavLink to="/memory-album">
+                  <FaArrowRight /> Memory Album
+                </NavLink>
               </li>
 
               <li>
-                <NavLink to="/contact">Contact</NavLink>
+                <NavLink to="/contact">
+                  <FaArrowRight /> Contact
+                </NavLink>
               </li>
             </ul>
           </Col>
 
           {/* Contact */}
           <Col xs={12} sm={6} lg={3}>
-            <h5 className="footer-title">Contact</h5>
+            <h5 className="footer-title">Little One</h5>
 
             <div className="footer-contact">
               <p>
@@ -77,6 +88,10 @@ const Footer = () => {
           {/* Social */}
           <Col xs={12} lg={2}>
             <h5 className="footer-title">Follow Us</h5>
+
+            <p className="footer-social-text">
+              Follow Sprihan's journey and memories.
+            </p>
 
             <div className="footer-social">
               <a
@@ -110,11 +125,15 @@ const Footer = () => {
         {/* Bottom */}
         <div className="footer-bottom">
           <small>
-            © 2026 Sprihan Halder. Made with{" "}
-            <FaHeart className="small-heart" /> By Family.
+            © {new Date().getFullYear()} <strong>Sprihan Halder</strong>. All
+            rights reserved.
           </small>
 
-          <div className="mt-2">
+          <div className="footer-bottom-right">
+            <span>
+              Made with <FaHeart className="small-heart" /> by Family
+            </span>
+
             <NavLink to="/admin/login" className="admin-login-link">
               Admin Login
             </NavLink>

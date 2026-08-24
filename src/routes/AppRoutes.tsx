@@ -14,36 +14,38 @@ import EditMemory from "../admin/EditMemory";
 import BlogPost from "../admin/BlogPost";
 import BlogList from "../admin/BlogList";
 
+import DocumentList from "../admin/DocumentList";
+import DocumentPost from "../admin/DocumentPost";
+
+import UserRegister from "../admin/UserRegister";
+
+import UserList from "../admin/UserList";
+import UserProtectedRoute from "../admin/UserProtectedRoute";
+
+import Chat from "../admin/Chat";
+
+import UserProfile from "../admin/UserProfile";
+
 import ProtectedRoute from "../admin/ProtectedRoute";
 
 const AppRoutes = () => {
   return (
     <Routes>
-
       {/* =========================
-          PUBLIC WEBSITE
-          Navbar + Footer
+          PUBLIC
       ========================== */}
+
       <Route element={<MainLayout />}>
-        <Route
-          path="/"
-          element={<Home />}
-        />
+        <Route path="/" element={<Home />} />
 
-        {/* Admin Login also has Navbar + Footer */}
-        <Route
-          path="/admin/login"
-          element={<Login />}
-        />
+        <Route path="/admin/login" element={<Login />} />
       </Route>
-
 
       {/* =========================
           ADMIN PANEL
-          Footer only
       ========================== */}
-      <Route element={<AdminLayout />}>
 
+      <Route element={<AdminLayout />}>
         {/* Dashboard */}
         <Route
           path="/admin/dashboard"
@@ -54,7 +56,49 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Memories */}
+        {/* Admin only - Register User */}
+        <Route
+          path="/admin/users/register"
+          element={
+            <ProtectedRoute>
+              <UserRegister />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* User List */}
+        <Route
+          path="/users"
+          element={
+            <UserProtectedRoute>
+              <UserList />
+            </UserProtectedRoute>
+          }
+        />
+
+        <Route
+  path="/user/profile"
+  element={
+    <UserProtectedRoute>
+      <UserProfile />
+    </UserProtectedRoute>
+  }
+/>
+
+        {/* Chat */}
+        <Route
+          path="/messages/:userId"
+          element={
+            <UserProtectedRoute>
+              <Chat />
+            </UserProtectedRoute>
+          }
+        />
+
+        {/* =========================
+            MEMORIES
+        ========================== */}
+
         <Route
           path="/admin/memories"
           element={
@@ -64,7 +108,6 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Add Memory */}
         <Route
           path="/admin/memories/add"
           element={
@@ -74,7 +117,6 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Edit Memory */}
         <Route
           path="/admin/memories/edit/:id"
           element={
@@ -84,11 +126,10 @@ const AppRoutes = () => {
           }
         />
 
-        {/* =====================
+        {/* =========================
             BLOG
-        ====================== */}
+        ========================== */}
 
-        {/* Blog List */}
         <Route
           path="/admin/blogs"
           element={
@@ -98,7 +139,6 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Add Blog */}
         <Route
           path="/admin/blogs/add"
           element={
@@ -108,11 +148,6 @@ const AppRoutes = () => {
           }
         />
 
-        
-
-      </Route>
-
-       {/* Edit Blog */}
         <Route
           path="/admin/blogs/edit/:id"
           element={
@@ -122,10 +157,37 @@ const AppRoutes = () => {
           }
         />
 
+        {/* =========================
+            DOCUMENTS
+        ========================== */}
 
+        <Route
+          path="/admin/documents"
+          element={
+            <ProtectedRoute>
+              <DocumentList />
+            </ProtectedRoute>
+          }
+        />
 
-      
+        <Route
+          path="/admin/documents/add"
+          element={
+            <ProtectedRoute>
+              <DocumentPost />
+            </ProtectedRoute>
+          }
+        />
 
+        <Route
+          path="/admin/documents/edit/:id"
+          element={
+            <ProtectedRoute>
+              <DocumentPost />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
     </Routes>
   );
 };
