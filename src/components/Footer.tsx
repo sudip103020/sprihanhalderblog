@@ -15,109 +15,99 @@ const Footer = () => {
   return (
     <footer className="footer">
       <Container>
-        <Row className="gy-4">
-          {/* Brand / About */}
-          <Col xs={12} md={6} lg={4}>
-            <div className="footer-brand">
-              <h4 className="footer-logo">
-                ✍️ <span>SprihanBlog</span>
-              </h4>
+      <Row className="gy-4">
 
-              <p className="footer-description">
-                A little place filled with precious memories, beautiful
-                moments, family stories, and the journey of our little one.
-              </p>
+  {/* Brand */}
+  <Col xs={12} md={6} lg={4}>
+    <div className="footer-brand">
+      <h4 className="footer-logo">
+        ✍️ <span>SprihanBlog</span>
+      </h4>
 
-              
-            </div>
-          </Col>
+      <p className="footer-description">
+        A little place filled with precious memories, beautiful
+        moments, family stories, and the journey of our little one.
+      </p>
+    </div>
+  </Col>
 
-          {/* Quick Links */}
-          <Col xs={12} sm={6} lg={3}>
-            <h5 className="footer-title">Quick Links</h5>
+  {/* Quick Links */}
+  <Col xs={6} md={3} lg={3}>
+    <h5 className="footer-title">Quick Links</h5>
 
-            <ul className="footer-links">
-              <li>
-                <NavLink to="/">
-                  <FaArrowRight /> Home
-                </NavLink>
-              </li>
+    <ul className="footer-links">
+      <li>
+        <NavLink to="/">
+          <FaArrowRight /> Home
+        </NavLink>
+      </li>
 
-              <li>
-                <NavLink to="/about">
-                  <FaArrowRight /> About
-                </NavLink>
-              </li>
+      <li>
+        <NavLink to="/about">
+          <FaArrowRight /> About
+        </NavLink>
+      </li>
 
-              <li>
-                <NavLink to="/memory-album">
-                  <FaArrowRight /> Memory Album
-                </NavLink>
-              </li>
+      <li>
+        <NavLink to="/memory-album">
+          <FaArrowRight /> Memory Album
+        </NavLink>
+      </li>
+    </ul>
+  </Col>
 
-              <li>
-                <NavLink to="/contact">
-                  <FaArrowRight /> Contact
-                </NavLink>
-              </li>
-            </ul>
-          </Col>
+  {/* Little One */}
+  <Col xs={6} md={3} lg={3}>
+    <h5 className="footer-title">Little One</h5>
 
-          {/* Contact */}
-          <Col xs={12} sm={6} lg={3}>
-            <h5 className="footer-title">Little One</h5>
+    <div className="footer-contact">
+      <p>
+        <FaUser />
+        <span>Sprihan Halder</span>
+      </p>
 
-            <div className="footer-contact">
-              <p>
-                <FaUser />
-                <span>Sprihan Halder</span>
-              </p>
+      <p>
+        <FaBirthdayCake />
+        <span>30 October 2025</span>
+      </p>
 
-              <p>
-                <FaBirthdayCake />
-                <span>30 October 2025</span>
-              </p>
+      <p>
+        <FaEnvelope />
+        <span>sprihanhalder@gmail.com</span>
+      </p>
+    </div>
+  </Col>
 
-              <p>
-                <FaEnvelope />
-                <span>sprihanhalder@gmail.com</span>
-              </p>
-            </div>
-          </Col>
+  {/* Social */}
+  <Col xs={12} lg={2}>
+    <h5 className="footer-title">Follow Us</h5>
 
-          {/* Social */}
-          <Col xs={12} lg={2}>
-            <h5 className="footer-title">Follow Us</h5>
+    <div className="footer-social">
+      <a
+        href="https://facebook.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Facebook"
+      >
+        <FaFacebookF />
+      </a>
 
-            <p className="footer-social-text">
-              Follow Sprihan's journey and memories.
-            </p>
+      <a
+        href="https://github.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub"
+      >
+        <FaGithub />
+      </a>
 
-            <div className="footer-social">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-              >
-                <FaFacebookF />
-              </a>
+      <NavLink to="/" aria-label="Website">
+        <FaGlobe />
+      </NavLink>
+    </div>
+  </Col>
 
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-              >
-                <FaGithub />
-              </a>
-
-              <NavLink to="/" aria-label="Website">
-                <FaGlobe />
-              </NavLink>
-            </div>
-          </Col>
-        </Row>
+</Row>
 
         {/* Divider */}
         <div className="footer-line"></div>
@@ -131,7 +121,7 @@ const Footer = () => {
 
           <div className="footer-bottom-right">
             <span>
-              Made with <FaHeart className="small-heart" /> by Family
+              Made with <FaHeart className="small-heart" /> By Family
             </span>
 
             <NavLink to="/admin/login" className="admin-login-link">

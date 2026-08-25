@@ -308,7 +308,7 @@
 ========================================================= */
 
 .footer {
-  margin-top: 70px;
+  margin-top: 0px;
   padding: 55px 0 20px;
   background: linear-gradient(
     135deg,
@@ -544,6 +544,48 @@
 }
 
 
+@media (max-width: 767px) {
+  .footer {
+    margin-top: 30px;
+    padding: 30px 0 12px;
+  }
+
+  .footer-title {
+    margin-bottom: 14px;
+    font-size: 1rem;
+  }
+
+  .footer-links li {
+    margin-bottom: 7px;
+  }
+
+  .footer-contact p {
+    margin-bottom: 9px;
+    font-size: 0.85rem;
+  }
+
+  .footer-social-text {
+    margin-bottom: 10px;
+    font-size: 0.82rem;
+  }
+
+  .footer-line {
+    margin: 22px 0 15px;
+  }
+
+  .footer-bottom {
+    gap: 8px;
+  }
+
+  .footer-bottom-right {
+    width: auto;
+    justify-content: center;
+    flex-direction: row;
+    gap: 15px;
+  }
+}
+
+
 /* =========================================================
    RESPONSIVE - TABLET
 ========================================================= */
@@ -650,7 +692,7 @@
   }
 
   .footer {
-    margin-top: 45px;
+    margin-top: 0px;
     padding: 40px 0 18px;
     text-align: center;
   }
@@ -996,5 +1038,143 @@
 
   .dashboard-section-title {
     font-size: 20px;
+  }
+}
+
+
+/* ================================
+   DASHBOARD HEADER
+================================ */
+
+.dashboard-header-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  border: 1px solid #e5e5e5;
+  color: #555;
+  transition: all 0.2s ease;
+}
+
+.dashboard-header-btn:hover {
+  color: #e75480;
+  border-color: #e75480;
+}
+
+
+/* ================================
+   DASHBOARD MOBILE
+================================ */
+
+@media (max-width: 767px) {
+
+  /* Main dashboard spacing */
+  .dashboard-container {
+    padding-top: 20px !important;
+    padding-bottom: 25px !important;
+  }
+
+  /* Header */
+  .dashboard-header-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+  }
+
+  /* Overview */
+  .dashboard-stat-card {
+    border-radius: 16px !important;
+  }
+
+  .dashboard-stat-card .card-body {
+    padding: 14px !important;
+  }
+
+  .dashboard-stat-icon {
+    width: 45px !important;
+    height: 45px !important;
+    min-width: 45px !important;
+    border-radius: 13px;
+    font-size: 19px;
+    margin-right: 10px !important;
+  }
+
+  .dashboard-stat-label {
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+
+  .dashboard-stat-number {
+    font-size: 23px;
+  }
+
+
+  /* Category */
+  .dashboard-category-card {
+    border-radius: 16px !important;
+  }
+
+  .dashboard-category-card .card-body {
+    padding: 14px !important;
+  }
+
+  .dashboard-category-icon {
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+    border-radius: 13px;
+    font-size: 19px;
+  }
+
+  .dashboard-category-count {
+    font-size: 23px;
+  }
+
+  .dashboard-category-card small {
+    font-size: 10px;
+  }
+
+  .dashboard-category-card .mt-4 {
+    margin-top: 15px !important;
+  }
+
+  .dashboard-category-card h5 {
+    font-size: 16px;
+    margin-bottom: 3px !important;
+  }
+
+  .dashboard-category-card p {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+
+  /* Section headings */
+  .dashboard-section-title {
+    font-size: 19px;
+  }
+
+
+  /* Quick Actions */
+  .dashboard-action-btn {
+    min-height: 48px;
+    padding: 10px !important;
+    font-size: 12px;
+    border-radius: 12px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .footer .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .footer .row > .col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
   }
 }

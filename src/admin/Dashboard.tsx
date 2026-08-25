@@ -402,6 +402,15 @@ const Dashboard = () => {
 
             {/* Right */}
             <div className="d-flex align-items-center gap-2">
+              {/* Messages */}
+              <Button
+                variant="light"
+                className="dashboard-header-btn"
+                onClick={() => navigate("/users")}
+                title="Messages"
+              >
+                <FaComments />
+              </Button>
               {/* Profile */}
               <Button
                 variant="light"
@@ -446,15 +455,19 @@ const Dashboard = () => {
       {/* =========================
           Main
       ========================== */}
-      <Container className="py-4">
+      <Container className="py-4 dashboard-container">
         {/* Welcome */}
 
         {/* =========================
             Overview
         ========================== */}
         <Row className="g-4 mb-5">
-          <Col xs={12} md={4}>
-            <Card className="dashboard-stat-card h-100">
+          <Col xs={6} md={4}>
+            <Card
+              className="dashboard-stat-card h-100"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate("/admin/memories")}
+            >
               <Card.Body className="p-4">
                 <div className="d-flex align-items-center">
                   <div className="dashboard-stat-icon bg-dark text-white me-3">
@@ -477,7 +490,7 @@ const Dashboard = () => {
             </Card>
           </Col>
 
-          <Col xs={12} md={4}>
+          <Col xs={6} md={4}>
             <Card
               className="dashboard-stat-card h-100"
               style={{ cursor: "pointer" }}
@@ -512,7 +525,7 @@ const Dashboard = () => {
             </Card>
           </Col>
 
-          <Col xs={12} md={4}>
+          <Col xs={6} md={4}>
             <Card
               className="dashboard-stat-card h-100"
               style={{ cursor: "pointer" }}
@@ -554,14 +567,12 @@ const Dashboard = () => {
         <div className="mb-4">
           <h4 className="fw-bold mb-1">Memories by Category</h4>
 
-          <p className="text-muted mb-0">
-            Click a category to view its memories.
-          </p>
+          
         </div>
 
         <Row className="g-4">
           {categories.map((category) => (
-            <Col xs={12} sm={6} lg={3} key={category.type}>
+            <Col xs={6} sm={6} lg={3} key={category.type}>
               <Card
                 className="dashboard-category-card h-100"
                 style={{
@@ -617,10 +628,10 @@ const Dashboard = () => {
             Quick Actions
         ========================== */}
         <div className="mt-5">
-          <h4 className="fw-bold mb-3">Quick Actions</h4>
+          <h4 className="fw-bold mb-3">Add Task Section</h4>
 
           <Row className="g-3">
-            <Col xs={12} md={3}>
+            <Col xs={6} md={3}>
               <Button
                 variant="dark"
                 className="w-100 py-3"
@@ -631,18 +642,9 @@ const Dashboard = () => {
               </Button>
             </Col>
 
-            <Col xs={12} md={3}>
-              <Button
-                variant="outline-dark"
-                className="w-100 py-3"
-                onClick={() => navigate("/admin/memories")}
-              >
-                <FaImages className="me-2" />
-                View All Memories
-              </Button>
-            </Col>
+           
 
-            <Col xs={12} md={3}>
+            <Col xs={6} md={3}>
               <Button
                 variant="primary"
                 className="w-100 py-3"
@@ -653,48 +655,29 @@ const Dashboard = () => {
               </Button>
             </Col>
 
-            <Col xs={12} md={3}>
-          <Button
-            variant="danger"
-            className="w-100 py-3"
-            onClick={() => navigate("/admin/documents/add")}
-          >
-            📄
-            <span className="ms-2">Upload Document</span>
-          </Button>
-        </Col>
-          {/* Register User */}
-  <Col xs={12} md={3}>
-    <Button
-      variant="success"
-      className="w-100 py-3"
-      onClick={() =>
-        navigate("/admin/users/register")
-      }
-    >
-      <FaUserPlus className="me-2" />
-      Register User
-    </Button>
-  </Col>
-
-
-  {/* Messages */}
-  <Col xs={12} md={3}>
-    <Button
-      variant="primary"
-      className="w-100 py-3"
-      onClick={() =>
-        navigate("/users")
-      }
-    >
-      <FaComments className="me-2" />
-      Messages
-    </Button>
-  </Col>
+            <Col xs={6} md={3}>
+              <Button
+                variant="danger"
+                className="w-100 py-3"
+                onClick={() => navigate("/admin/documents/add")}
+              >
+                📄
+                <span className="ms-2">Add Doc</span>
+              </Button>
+            </Col>
+            {/* Register User */}
+            <Col xs={6} md={3}>
+              <Button
+                variant="success"
+                className="w-100 py-3"
+                onClick={() => navigate("/admin/users/register")}
+              >
+                <FaUserPlus className="me-2" />
+                Register User
+              </Button>
+            </Col>
           </Row>
         </div>
-
-        
 
         {/* =========================
             Profile Card

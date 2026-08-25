@@ -78,6 +78,9 @@ const MemoryList = () => {
   const [deletingId, setDeletingId] =
     useState<string | null>(null);
 
+    const [fromDate, setFromDate] = useState("");
+const [toDate, setToDate] = useState("");
+
   const loadMemories = async () => {
     try {
       setLoading(true);
@@ -225,14 +228,26 @@ const MemoryList = () => {
     }
   };
 
-  const filteredMemories =
-    categoryFromUrl === "all"
-      ? memories
-      : memories.filter(
-          (memory) =>
-            memory.type === categoryFromUrl
-        );
+ const filteredMemories = memories.filter((memory) => {
+  // Category filter
+  const categoryMatch =
+    categoryFromUrl === "all" ||
+    memory.type === categoryFromUrl;
 
+  // From date filter
+  const fromDateMatch =
+    !fromDate || memory.date >= fromDate;
+
+  // To date filter
+  const toDateMatch =
+    !toDate || memory.date <= toDate;
+
+  return (
+    categoryMatch &&
+    fromDateMatch &&
+    toDateMatch
+  );
+});
   const handleView = (memory: Memory) => {
     setSelectedMemory(memory);
     setShowDetails(true);
@@ -288,13 +303,10 @@ const MemoryList = () => {
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h2 className="fw-bold mb-1">
-              Memories
-            </h2>
+            <h4 className="fw-bold mb-1">
+              Sprihan's Memories
+            </h4>
 
-            <p className="text-muted mb-0">
-              Manage Sprihan's memories
-            </p>
           </div>
 
           <div className="d-flex gap-2">
@@ -333,57 +345,130 @@ const MemoryList = () => {
         )}
 
         {/* Filter */}
-        <Card className="border-0 shadow-sm mb-4">
-          <Card.Body>
-            <Row className="align-items-center g-3">
-              <Col md={4}>
-                <h6 className="fw-bold mb-0">
-                  <FaFilter className="me-2" />
-                  Memory Category
-                </h6>
-              </Col>
+       <Card className="border-0 shadow-sm mb-4">
+  <Card.Body>
+    <Row className="align-items-end g-3">
 
-              <Col md={8}>
-                <Form.Select
-                  value={categoryFromUrl}
-                  onChange={(e) =>
-                    handleCategoryChange(
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="all">
-                    All Memories
-                  </option>
+      {/* Category */}
+      <Col md={4}>
+        <Form.Label className="fw-semibold">
+          <FaFilter className="me-2" />
+          Memory Category
+        </Form.Label>
 
-                  <option value="prescription">
-                    💊 Prescription
-                  </option>
+        <Form.Select
+          value={categoryFromUrl}
+          onChange={(e) =>
+            handleCategoryChange(e.target.value)
+          }
+        >
+          <option value="all">
+            All Memories
+          </option>
 
-                  <option value="travel">
-                    ✈️ Travel
-                  </option>
+          <option value="prescription">
+            💊 Prescription
+          </option>
 
-                  <option value="general">
-                    ❤️ General Memory
-                  </option>
+          <option value="travel">
+            ✈️ Travel
+          </option>
 
-                  <option value="video">
-                    🎬 Video
-                  </option>
+          <option value="general">
+            ❤️ General Memory
+          </option>
 
-                  <option value="program">
-                    🎉 Program / Event
-                  </option>
+          <option value="video">
+            🎬 Video
+          </option>
 
-                  <option value="other">
-                    📌 Other
-                  </option>
-                </Form.Select>
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
+          <option value="program">
+            🎉 Program / Event
+          </option>
+
+          <option value="other">
+            📌 Other
+          </option>
+        </Form.Select>
+      </Col>
+
+      {/* From Date */}
+      <Col md={3}>
+        <Form.Label className="fw-semibold">
+          From Date
+        </Form.Label>
+
+        <Form.Control
+          type="date"
+          value={fromDate}
+          onChange={(e) =>
+            setFromDate(e.target.value)
+          }
+        />
+      </Col>
+
+      {/* To Date */}
+      <Col md={3}>
+        <Form.Label className="fw-semibold">
+          To Date
+        </Form.Label>
+
+        <Form.Control
+          type="date"
+          value={toDate}
+          min={fromDate || undefined}
+          onChange={(e) =>
+            setToDate(e.target.value)
+          }
+        />
+      </Col>
+
+      {/* Clear Filter */}
+      <Col md={2}>
+        <Button
+          variant="outline-secondary"
+          className="w-100"
+          onClick={() => {
+            setFromDate("");
+            setToDate("");
+            setSearchParams({});
+          }}
+          disabled={
+            categoryFromUrl === "all" &&
+            !fromDate &&
+            !toDate
+          }
+        >
+          Clear Filter
+        </Button>
+      </Col>
+
+    </Row>
+
+    {/* Filter Result */}
+    {(fromDate || toDate || categoryFromUrl !== "all") && (
+      <div className="mt-3 pt-3 border-top">
+        <small className="text-muted">
+          Showing{" "}
+          <strong>{filteredMemories.length}</strong>{" "}
+          memories
+          {fromDate && (
+            <>
+              {" "}from{" "}
+              <strong>{formatDate(fromDate)}</strong>
+            </>
+          )}
+          {toDate && (
+            <>
+              {" "}to{" "}
+              <strong>{formatDate(toDate)}</strong>
+            </>
+          )}
+        </small>
+      </div>
+    )}
+  </Card.Body>
+</Card>
 
         <Card className="border-0 shadow-sm">
           <Card.Body className="p-0">

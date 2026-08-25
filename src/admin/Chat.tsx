@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   onSnapshot,
@@ -27,6 +28,7 @@ import {
   Button,
   Spinner,
   Alert,
+  Dropdown,
 } from "react-bootstrap";
 
 import {
@@ -35,7 +37,12 @@ import {
   FaUser,
   FaImage,
   FaTimes,
+  FaSmile,
+  FaTrash,
 } from "react-icons/fa";
+
+import EmojiPicker from "emoji-picker-react";
+import type { EmojiClickData } from "emoji-picker-react";
 
 import { auth, db } from "../firebase/config";
 
@@ -97,27 +104,33 @@ const Chat = () => {
   const [error, setError] =
     useState("");
 
+  const [showEmojiPicker, setShowEmojiPicker] =
+    useState(false);
+
+  const [deletingMessageId, setDeletingMessageId] =
+    useState<string | null>(null);
+
   // =========================
   // Current User
   // =========================
 
- useEffect(() => {
-  const unsubscribe = onAuthStateChanged(
-    auth,
-    (user) => {
-      if (!user) {
-        navigate("/admin/login", {
-          replace: true,
-        });
-        return;
-      }
+  useEffect(() => {
+    const unsubscribe =
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          navigate("/admin/login", {
+            replace: true,
+          });
 
-      setCurrentUserId(user.uid);
-    }
-  );
+          return;
+        }
 
-  return () => unsubscribe();
-}, [navigate]);
+        setCurrentUserId(user.uid);
+      });
+
+    return () => unsubscribe();
+  }, [navigate]);
+
   // =========================
   // Load Chat User
   // =========================
@@ -146,7 +159,7 @@ const Chat = () => {
           userSnap.data();
 
         setChatUser({
-          uid: data.uid,
+          uid: data.uid || userId,
           name:
             data.name ||
             "Unknown User",
@@ -157,6 +170,7 @@ const Chat = () => {
         });
       } catch (err) {
         console.error(err);
+
         setError(
           "Unable to load user."
         );
@@ -189,13 +203,16 @@ const Chat = () => {
   };
 
   // =========================
-  // Mark Messages as Seen
+  // Mark Messages Seen
   // =========================
 
   const markMessagesAsSeen = async (
     messageList: Message[]
   ) => {
-    if (!currentUserId || !userId) {
+    if (
+      !currentUserId ||
+      !userId
+    ) {
       return;
     }
 
@@ -312,7 +329,6 @@ const Chat = () => {
                 createdAt:
                   data.createdAt,
 
-                // Important
                 seen:
                   data.seen ??
                   false,
@@ -324,9 +340,6 @@ const Chat = () => {
             messageList
           );
 
-          // Automatically mark
-          // received unread messages
-          // as seen
           markMessagesAsSeen(
             messageList
           );
@@ -351,12 +364,23 @@ const Chat = () => {
   // =========================
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView(
-      {
-        behavior: "smooth",
-      }
-    );
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
   }, [messages]);
+
+  // =========================
+  // Emoji
+  // =========================
+
+  const handleEmojiClick = (
+    emojiData: EmojiClickData
+  ) => {
+    setMessage(
+      (prev) =>
+        prev + emojiData.emoji
+    );
+  };
 
   // =========================
   // Select Image
@@ -370,7 +394,6 @@ const Chat = () => {
 
     if (!file) return;
 
-    // Maximum 5MB
     if (
       file.size >
       5 * 1024 * 1024
@@ -389,7 +412,6 @@ const Chat = () => {
       return;
     }
 
-    // Only image
     if (
       !file.type.startsWith(
         "image/"
@@ -419,11 +441,12 @@ const Chat = () => {
   };
 
   // =========================
-  // Remove Selected Image
+  // Remove Image
   // =========================
 
   const removeSelectedImage = () => {
     setSelectedImage(null);
+
     setImagePreview("");
 
     if (
@@ -435,7 +458,7 @@ const Chat = () => {
   };
 
   // =========================
-  // Upload Image Cloudinary
+  // Upload Image
   // =========================
 
   const uploadImage = async (
@@ -535,28 +558,16 @@ const Chat = () => {
 
         let imageUrl = "";
 
-        // =========================
-        // Upload Image
-        // =========================
-
         if (selectedImage) {
-          setUploadingImage(
-            true
-          );
+          setUploadingImage(true);
 
           imageUrl =
             await uploadImage(
               selectedImage
             );
 
-          setUploadingImage(
-            false
-          );
+          setUploadingImage(false);
         }
-
-        // =========================
-        // Conversation
-        // =========================
 
         await setDoc(
           conversationRef,
@@ -578,10 +589,6 @@ const Chat = () => {
           }
         );
 
-        // =========================
-        // Message
-        // =========================
-
         await addDoc(
           collection(
             db,
@@ -596,10 +603,9 @@ const Chat = () => {
             receiverId:
               userId,
 
-            text: text,
+            text,
 
-            imageUrl:
-              imageUrl,
+            imageUrl,
 
             type: imageUrl
               ? "image"
@@ -608,31 +614,84 @@ const Chat = () => {
             createdAt:
               serverTimestamp(),
 
-            // IMPORTANT
-            // New message is unread
             seen: false,
           }
         );
 
-        // =========================
-        // Reset
-        // =========================
-
         setMessage("");
 
         removeSelectedImage();
+
+        setShowEmojiPicker(
+          false
+        );
       } catch (err) {
         console.error(err);
 
-        setUploadingImage(
-          false
-        );
+        setUploadingImage(false);
 
         setError(
           "Message could not be sent."
         );
       } finally {
         setSending(false);
+      }
+    };
+
+  // =========================
+  // Delete Message
+  // =========================
+
+  const handleDeleteMessage =
+    async (
+      messageId: string
+    ) => {
+      if (
+        !currentUserId ||
+        !userId
+      ) {
+        return;
+      }
+
+      const confirmDelete =
+        window.confirm(
+          "Are you sure you want to delete this message?"
+        );
+
+      if (!confirmDelete) {
+        return;
+      }
+
+      try {
+        setDeletingMessageId(
+          messageId
+        );
+
+        const conversationId =
+          getConversationId();
+
+        await deleteDoc(
+          doc(
+            db,
+            "conversations",
+            conversationId,
+            "messages",
+            messageId
+          )
+        );
+      } catch (err) {
+        console.error(
+          "Delete message error:",
+          err
+        );
+
+        setError(
+          "Message could not be deleted."
+        );
+      } finally {
+        setDeletingMessageId(
+          null
+        );
       }
     };
 
@@ -679,38 +738,51 @@ const Chat = () => {
 
   return (
     <div
-      className="min-vh-100 py-4"
+      className="min-vh-100"
       style={{
-        background: "#f8f9fa",
+        background:
+          "linear-gradient(135deg, #f8fafc, #eef1f5)",
+        padding: "20px 0",
       }}
     >
       <Container>
-
         <Card
-          className="border-0 shadow-sm overflow-hidden"
+          className="border-0 shadow-lg overflow-hidden"
           style={{
             height:
-              "calc(100vh - 50px)",
+              "calc(100vh - 40px)",
+            minHeight:
+              "600px",
             borderRadius:
-              "20px",
+              "24px",
           }}
         >
 
           {/* =========================
-              Header
+              Premium Header
           ========================== */}
 
           <Card.Header
-            className="bg-white border-0 d-flex align-items-center"
+            className="border-0 d-flex align-items-center"
             style={{
               padding:
-                "16px 20px",
+                "15px 20px",
+              background:
+                "rgba(255,255,255,0.96)",
+              borderBottom:
+                "1px solid #eee",
             }}
           >
 
+            {/* Back */}
+
             <Button
               variant="light"
-              className="rounded-circle me-3"
+              className="rounded-circle d-flex align-items-center justify-content-center me-3"
+              style={{
+                width: "44px",
+                height: "44px",
+              }}
               onClick={() =>
                 navigate("/users")
               }
@@ -721,43 +793,93 @@ const Chat = () => {
             {/* Profile */}
 
             <div
-              className="d-flex align-items-center justify-content-center overflow-hidden me-3"
+              className="position-relative me-3"
               style={{
-                width: "48px",
-                height: "48px",
-                borderRadius:
-                  "50%",
-                background:
-                  "#e9ecef",
+                width: "50px",
+                height: "50px",
               }}
             >
-              {chatUser.photo ? (
-                <img
-                  src={
-                    chatUser.photo
-                  }
-                  alt={
-                    chatUser.name
-                  }
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit:
-                      "cover",
-                  }}
-                />
-              ) : (
-                <FaUser className="text-secondary" />
-              )}
+              <div
+                className="d-flex align-items-center justify-content-center overflow-hidden"
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius:
+                    "50%",
+                  background:
+                    "#e9ecef",
+                  border:
+                    "2px solid #fff",
+                  boxShadow:
+                    "0 3px 12px rgba(0,0,0,0.15)",
+                }}
+              >
+                {chatUser.photo ? (
+                  <img
+                    src={
+                      chatUser.photo
+                    }
+                    alt={
+                      chatUser.name
+                    }
+                    style={{
+                      width:
+                        "100%",
+                      height:
+                        "100%",
+                      objectFit:
+                        "cover",
+                    }}
+                  />
+                ) : (
+                  <FaUser
+                    className="text-secondary"
+                    size={22}
+                  />
+                )}
+              </div>
+
+              {/* Online Dot */}
+
+              <span
+                style={{
+                  position:
+                    "absolute",
+                  right: "1px",
+                  bottom: "1px",
+                  width: "13px",
+                  height: "13px",
+                  borderRadius:
+                    "50%",
+                  background:
+                    "#22c55e",
+                  border:
+                    "2px solid #fff",
+                }}
+              />
             </div>
 
-            <div>
-              <h6 className="fw-bold mb-0">
+            {/* Name */}
+
+            <div className="flex-grow-1">
+              <h6
+                className="fw-bold mb-0"
+                style={{
+                  fontSize:
+                    "16px",
+                }}
+              >
                 {chatUser.name}
               </h6>
 
-              <small className="text-muted">
-                {chatUser.email}
+              <small
+                className="text-success"
+                style={{
+                  fontSize:
+                    "12px",
+                }}
+              >
+                ● Active
               </small>
             </div>
 
@@ -771,39 +893,52 @@ const Chat = () => {
             className="overflow-auto"
             style={{
               background:
-                "#f1f3f5",
+                "linear-gradient(180deg, #f8fafc 0%, #eef1f5 100%)",
+              padding:
+                "20px",
             }}
           >
 
-            {messages.length ===
-            0 ? (
-
+            {messages.length === 0 ? (
               <div className="h-100 d-flex align-items-center justify-content-center">
 
                 <div className="text-center text-muted">
 
-                  <FaPaperPlane
-                    size={35}
-                    className="mb-3"
-                  />
+                  <div
+                    className="mx-auto mb-3 d-flex align-items-center justify-content-center"
+                    style={{
+                      width:
+                        "70px",
+                      height:
+                        "70px",
+                      borderRadius:
+                        "50%",
+                      background:
+                        "#fff",
+                      boxShadow:
+                        "0 5px 20px rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    <FaPaperPlane
+                      size={25}
+                    />
+                  </div>
 
-                  <p className="mb-0">
-                    No messages yet.
-                  </p>
+                  <h6 className="fw-bold">
+                    Start a conversation
+                  </h6>
 
                   <small>
-                    Start the conversation 👋
+                    Send a message to{" "}
+                    {chatUser.name} 👋
                   </small>
 
                 </div>
 
               </div>
-
             ) : (
-
               messages.map(
                 (msg) => {
-
                   const isMine =
                     msg.senderId ===
                     currentUserId;
@@ -822,106 +957,175 @@ const Chat = () => {
                         style={{
                           maxWidth:
                             "75%",
-
-                          padding:
-                            "10px 15px",
-
-                          borderRadius:
-                            isMine
-                              ? "18px 18px 4px 18px"
-                              : "18px 18px 18px 4px",
-
-                          background:
-                            isMine
-                              ? "#212529"
-                              : "#ffffff",
-
-                          color:
-                            isMine
-                              ? "#ffffff"
-                              : "#212529",
-
-                          boxShadow:
-                            "0 2px 5px rgba(0,0,0,0.05)",
+                          position:
+                            "relative",
                         }}
                       >
 
-                        {/* Image */}
+                        {/* Message Bubble */}
 
-                        {msg.imageUrl && (
-                          <img
-                            src={
-                              msg.imageUrl
-                            }
-                            alt="Sent image"
-                            style={{
-                              display:
-                                "block",
+                        <div
+                          style={{
+                            padding:
+                              "10px 14px",
+                            borderRadius:
+                              isMine
+                                ? "18px 18px 5px 18px"
+                                : "18px 18px 18px 5px",
 
-                              width:
-                                "100%",
+                            background:
+                              isMine
+                                ? "linear-gradient(135deg, #111827, #374151)"
+                                : "#ffffff",
 
-                              maxWidth:
-                                "300px",
+                            color:
+                              isMine
+                                ? "#fff"
+                                : "#212529",
 
-                              maxHeight:
-                                "350px",
+                            boxShadow:
+                              "0 3px 12px rgba(0,0,0,0.07)",
+                          }}
+                        >
 
-                              objectFit:
-                                "cover",
+                          {/* Image */}
 
-                              borderRadius:
-                                "12px",
+                          {msg.imageUrl && (
+                            <img
+                              src={
+                                msg.imageUrl
+                              }
+                              alt="Sent"
+                              style={{
+                                display:
+                                  "block",
+                                width:
+                                  "100%",
+                                maxWidth:
+                                  "300px",
+                                maxHeight:
+                                  "350px",
+                                objectFit:
+                                  "cover",
+                                borderRadius:
+                                  "12px",
+                                marginBottom:
+                                  msg.text
+                                    ? "8px"
+                                    : "0",
+                              }}
+                            />
+                          )}
 
-                              marginBottom:
+                          {/* Text */}
+
+                          {msg.text && (
+                            <div
+                              style={{
+                                whiteSpace:
+                                  "pre-wrap",
+                                wordBreak:
+                                  "break-word",
+                                paddingRight:
+                                  isMine
+                                    ? "5px"
+                                    : "0",
+                              }}
+                            >
+                              {
                                 msg.text
-                                  ? "8px"
-                                  : "0",
-                            }}
-                          />
-                        )}
+                              }
+                            </div>
+                          )}
 
-                        {/* Text */}
+                          {/* Bottom */}
 
-                        {msg.text && (
-                          <div
-                            style={{
-                              whiteSpace:
-                                "pre-wrap",
+                          {isMine && (
+                            <div
+                              className="text-end mt-1"
+                              style={{
+                                fontSize:
+                                  "10px",
+                                opacity:
+                                  0.7,
+                              }}
+                            >
+                              {msg.seen
+                                ? "Seen"
+                                : "Sent"}
+                            </div>
+                          )}
 
-                              wordBreak:
-                                "break-word",
-                            }}
-                          >
-                            {msg.text}
-                          </div>
-                        )}
+                        </div>
 
-                        {/* Seen status */}
+                        {/* Message Menu */}
 
                         {isMine && (
-                          <div
-                            className="text-end mt-1"
+                          <Dropdown
+                            className="position-absolute"
                             style={{
-                              fontSize:
-                                "10px",
-                              opacity:
-                                0.7,
+                              right:
+                                "-10px",
+                              top:
+                                "-10px",
                             }}
                           >
-                            {msg.seen
-                              ? "Seen"
-                              : "Sent"}
-                          </div>
+                            <Dropdown.Toggle
+                              variant="light"
+                              size="sm"
+                              className="rounded-circle border-0 shadow-sm d-flex align-items-center justify-content-center"
+                              style={{
+                                width:
+                                  "30px",
+                                height:
+                                  "30px",
+                                fontSize:
+                                  "16px",
+                                padding:
+                                  "0",
+                              }}
+                              disabled={
+                                deletingMessageId ===
+                                msg.id
+                              }
+                            >
+                              ⋮
+                            </Dropdown.Toggle>
+
+                            <Dropdown.Menu
+                              align="end"
+                              className="border-0 shadow"
+                            >
+                              <Dropdown.Item
+                                className="text-danger"
+                                onClick={() =>
+                                  handleDeleteMessage(
+                                    msg.id
+                                  )
+                                }
+                              >
+                                {deletingMessageId ===
+                                msg.id ? (
+                                  <Spinner
+                                    animation="border"
+                                    size="sm"
+                                    className="me-2"
+                                  />
+                                ) : (
+                                  <FaTrash className="me-2" />
+                                )}
+
+                                Delete
+                              </Dropdown.Item>
+                            </Dropdown.Menu>
+                          </Dropdown>
                         )}
 
                       </div>
-
                     </div>
                   );
                 }
               )
-
             )}
 
             <div
@@ -933,7 +1137,7 @@ const Chat = () => {
           </Card.Body>
 
           {/* =========================
-              Input
+              Footer
           ========================== */}
 
           <Card.Footer
@@ -959,7 +1163,6 @@ const Chat = () => {
                     "100px",
                 }}
               >
-
                 <img
                   src={
                     imagePreview
@@ -973,7 +1176,7 @@ const Chat = () => {
                     objectFit:
                       "cover",
                     borderRadius:
-                      "12px",
+                      "14px",
                   }}
                 />
 
@@ -989,9 +1192,9 @@ const Chat = () => {
                     right:
                       "-8px",
                     width:
-                      "25px",
+                      "26px",
                     height:
-                      "25px",
+                      "26px",
                     borderRadius:
                       "50%",
                     border:
@@ -1006,7 +1209,32 @@ const Chat = () => {
                     size={12}
                   />
                 </button>
+              </div>
+            )}
 
+            {/* Emoji Picker */}
+
+            {showEmojiPicker && (
+              <div
+                className="position-absolute"
+                style={{
+                  bottom:
+                    "90px",
+                  zIndex:
+                    1000,
+                }}
+              >
+                <EmojiPicker
+                  onEmojiClick={
+                    handleEmojiClick
+                  }
+                  width={
+                    320
+                  }
+                  height={
+                    400
+                  }
+                />
               </div>
             )}
 
@@ -1018,7 +1246,7 @@ const Chat = () => {
 
               <div className="d-flex gap-2 align-items-center">
 
-                {/* Image Button */}
+                {/* Emoji */}
 
                 <Button
                   type="button"
@@ -1026,11 +1254,40 @@ const Chat = () => {
                   className="rounded-circle d-flex align-items-center justify-content-center"
                   style={{
                     width:
-                      "52px",
+                      "48px",
                     minWidth:
-                      "52px",
+                      "48px",
                     height:
-                      "52px",
+                      "48px",
+                  }}
+                  onClick={() =>
+                    setShowEmojiPicker(
+                      (prev) =>
+                        !prev
+                    )
+                  }
+                  disabled={
+                    sending
+                  }
+                >
+                  <FaSmile
+                    size={19}
+                  />
+                </Button>
+
+                {/* Image */}
+
+                <Button
+                  type="button"
+                  variant="light"
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width:
+                      "48px",
+                    minWidth:
+                      "48px",
+                    height:
+                      "48px",
                   }}
                   onClick={() =>
                     fileInputRef.current?.click()
@@ -1039,7 +1296,9 @@ const Chat = () => {
                     sending
                   }
                 >
-                  <FaImage />
+                  <FaImage
+                    size={18}
+                  />
                 </Button>
 
                 <input
@@ -1054,7 +1313,7 @@ const Chat = () => {
                   }
                 />
 
-                {/* Text */}
+                {/* Message */}
 
                 <Form.Control
                   type="text"
@@ -1062,17 +1321,23 @@ const Chat = () => {
                   value={
                     message
                   }
-                  onChange={(
-                    e
-                  ) =>
+                  onChange={(e) =>
                     setMessage(
-                      e.target
-                        .value
+                      e.target.value
                     )
                   }
-                  className="py-3 rounded-pill"
+                  className="py-3 px-4 rounded-pill border-0"
+                  style={{
+                    background:
+                      "#f1f3f5",
+                  }}
                   disabled={
                     sending
+                  }
+                  onFocus={() =>
+                    setShowEmojiPicker(
+                      false
+                    )
                   }
                 />
 
@@ -1084,11 +1349,11 @@ const Chat = () => {
                   className="rounded-circle d-flex align-items-center justify-content-center"
                   style={{
                     width:
-                      "52px",
+                      "50px",
                     minWidth:
-                      "52px",
+                      "50px",
                     height:
-                      "52px",
+                      "50px",
                   }}
                   disabled={
                     sending ||
@@ -1119,7 +1384,6 @@ const Chat = () => {
           </Card.Footer>
 
         </Card>
-
       </Container>
     </div>
   );

@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
 
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
 
 import { useNavigate } from "react-router-dom";
 
 import {
   Container,
-  Row,
-  Col,
   Card,
   Button,
   Spinner,
@@ -17,9 +23,18 @@ import {
   Badge,
 } from "react-bootstrap";
 
-import { FaUser, FaComments, FaSignOutAlt, FaEdit } from "react-icons/fa";
+import {
+  FaUser,
+  FaComments,
+  FaSignOutAlt,
+  FaEdit,
+} from "react-icons/fa";
 
 import { auth, db } from "../firebase/config";
+
+// =====================================================
+// Interfaces
+// =====================================================
 
 interface UserData {
   uid: string;
@@ -32,19 +47,36 @@ interface UserData {
 interface ConversationData {
   participants: string[];
   lastMessage?: string;
+  updatedAt?: any;
 }
+
+// =====================================================
+// Component
+// =====================================================
 
 const UserList = () => {
   const navigate = useNavigate();
 
+  // =====================================================
+  // States
+  // =====================================================
+
   const [users, setUsers] = useState<UserData[]>([]);
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
 
-  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [currentUser, setCurrentUser] =
+    useState<UserData | null>(null);
 
-  const [lastMessages, setLastMessages] = useState<Record<string, string>>({});
+  const [unreadCounts, setUnreadCounts] =
+    useState<Record<string, number>>({});
+
+  const [lastMessages, setLastMessages] =
+    useState<Record<string, string>>({});
+
+  const [lastMessageTimes, setLastMessageTimes] =
+    useState<Record<string, number>>({});
 
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
 
   // =====================================================
@@ -52,59 +84,91 @@ const UserList = () => {
   // =====================================================
 
   useEffect(() => {
-    let unsubscribeUsers: (() => void) | undefined;
+    let unsubscribeUsers:
+      | (() => void)
+      | undefined;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!firebaseUser) {
-        navigate("/admin/login", {
-          replace: true,
-        });
-        return;
-      }
-
-      unsubscribeUsers = onSnapshot(
-        collection(db, "users"),
-        (snapshot) => {
-          const userList: UserData[] = [];
-          let loggedInUser: UserData | null = null;
-
-          snapshot.forEach((userDoc) => {
-            const data = userDoc.data();
-
-            const uid = data.uid || userDoc.id;
-
-            const userData: UserData = {
-              uid,
-              name: data.name || "Unknown User",
-              email: data.email || "",
-              photo: data.photo || "",
-              role: data.role || "user",
-            };
-
-            if (uid === firebaseUser.uid) {
-              loggedInUser = userData;
-            } else {
-              userList.push(userData);
-            }
+    const unsubscribeAuth =
+      onAuthStateChanged(auth, (firebaseUser) => {
+        if (!firebaseUser) {
+          navigate("/admin/login", {
+            replace: true,
           });
 
-          setCurrentUser(loggedInUser);
-          setUsers(userList);
-          setLoading(false);
-        },
-        (snapshotError) => {
-          console.error("Users listener error:", snapshotError);
+          return;
+        }
 
-          if (snapshotError.code === "permission-denied") {
-            setError("You do not have permission to view users.");
-          } else {
-            setError("Unable to load users.");
-          }
+        unsubscribeUsers = onSnapshot(
+          collection(db, "users"),
 
-          setLoading(false);
-        },
-      );
-    });
+          (snapshot) => {
+            const userList: UserData[] = [];
+
+            let loggedInUser:
+              | UserData
+              | null = null;
+
+            snapshot.forEach((userDoc) => {
+              const data = userDoc.data();
+
+              const uid =
+                data.uid || userDoc.id;
+
+              const userData: UserData = {
+                uid,
+
+                name:
+                  data.name ||
+                  "Unknown User",
+
+                email:
+                  data.email || "",
+
+                photo:
+                  data.photo || "",
+
+                role:
+                  data.role || "user",
+              };
+
+              // Current logged-in user
+              if (uid === firebaseUser.uid) {
+                loggedInUser = userData;
+              } else {
+                userList.push(userData);
+              }
+            });
+
+            setCurrentUser(loggedInUser);
+
+            setUsers(userList);
+
+            setLoading(false);
+          },
+
+          (snapshotError) => {
+            console.error(
+              "Users listener error:",
+              snapshotError,
+            );
+
+            if (
+              snapshotError.code ===
+              "permission-denied"
+            ) {
+              setError(
+                "You do not have permission to view users.",
+              );
+            } else {
+              setError(
+                "Unable to load users.",
+              );
+            }
+
+            setLoading(false);
+          },
+        );
+      });
 
     return () => {
       unsubscribeAuth();
@@ -123,71 +187,193 @@ const UserList = () => {
     if (!currentUser) {
       setUnreadCounts({});
       setLastMessages({});
+      setLastMessageTimes({});
+
       return;
     }
 
     const conversationsQuery = query(
       collection(db, "conversations"),
-      where("participants", "array-contains", currentUser.uid),
+
+      where(
+        "participants",
+        "array-contains",
+        currentUser.uid,
+      ),
     );
 
-    const messageUnsubscribers: (() => void)[] = [];
+    const messageUnsubscribers:
+      (() => void)[] = [];
 
-    const unsubscribeConversations = onSnapshot(
-      conversationsQuery,
-      (snapshot) => {
-        const latestMessages: Record<string, string> = {};
+    const unsubscribeConversations =
+      onSnapshot(
+        conversationsQuery,
 
-        snapshot.forEach((conversationDoc) => {
-          const data = conversationDoc.data() as ConversationData;
+        (snapshot) => {
+          const latestMessages: Record<
+            string,
+            string
+          > = {};
 
-          const otherUserId = data.participants?.find(
-            (id) => id !== currentUser.uid,
-          );
+          const latestMessageTimes: Record<
+            string,
+            number
+          > = {};
 
-          if (!otherUserId) return;
+          snapshot.forEach(
+            (conversationDoc) => {
+              const data =
+                conversationDoc.data() as ConversationData;
 
-          latestMessages[otherUserId] = data.lastMessage || "";
+              // Find other user
+              const otherUserId =
+                data.participants?.find(
+                  (id) =>
+                    id !==
+                    currentUser.uid,
+                );
 
-          const messagesQuery = query(
-            collection(db, "conversations", conversationDoc.id, "messages"),
-            where("receiverId", "==", currentUser.uid),
-            where("seen", "==", false),
-          );
+              if (!otherUserId) return;
 
-          const unsubscribeMessages = onSnapshot(
-            messagesQuery,
-            (messageSnapshot) => {
-              setUnreadCounts((prev) => ({
-                ...prev,
-                [otherUserId]: messageSnapshot.size,
-              }));
-            },
-            (messageError) => {
-              if (messageError.code !== "permission-denied") {
-                console.error("Message listener error:", messageError);
+              // =================================================
+              // Last Message
+              // =================================================
+
+              latestMessages[otherUserId] =
+                data.lastMessage || "";
+
+              // =================================================
+              // Last Message Time
+              // =================================================
+
+              let messageTime = 0;
+
+              if (
+                data.updatedAt?.toMillis
+              ) {
+                messageTime =
+                  data.updatedAt.toMillis();
+              } else if (
+                data.updatedAt?.seconds
+              ) {
+                messageTime =
+                  data.updatedAt.seconds *
+                  1000;
               }
+
+              latestMessageTimes[
+                otherUserId
+              ] = messageTime;
+
+              // =================================================
+              // Unread Messages
+              // =================================================
+
+              const messagesQuery =
+                query(
+                  collection(
+                    db,
+                    "conversations",
+                    conversationDoc.id,
+                    "messages",
+                  ),
+
+                  where(
+                    "receiverId",
+                    "==",
+                    currentUser.uid,
+                  ),
+
+                  where(
+                    "seen",
+                    "==",
+                    false,
+                  ),
+                );
+
+              const unsubscribeMessages =
+                onSnapshot(
+                  messagesQuery,
+
+                  (messageSnapshot) => {
+                    setUnreadCounts(
+                      (prev) => ({
+                        ...prev,
+
+                        [otherUserId]:
+                          messageSnapshot.size,
+                      }),
+                    );
+                  },
+
+                  (messageError) => {
+                    if (
+                      messageError.code !==
+                      "permission-denied"
+                    ) {
+                      console.error(
+                        "Message listener error:",
+                        messageError,
+                      );
+                    }
+                  },
+                );
+
+              messageUnsubscribers.push(
+                unsubscribeMessages,
+              );
             },
           );
 
-          messageUnsubscribers.push(unsubscribeMessages);
-        });
+          setLastMessages(
+            latestMessages,
+          );
 
-        setLastMessages(latestMessages);
-      },
-      (conversationError) => {
-        if (conversationError.code !== "permission-denied") {
-          console.error("Conversation listener error:", conversationError);
-        }
-      },
-    );
+          setLastMessageTimes(
+            latestMessageTimes,
+          );
+        },
+
+        (conversationError) => {
+          if (
+            conversationError.code !==
+            "permission-denied"
+          ) {
+            console.error(
+              "Conversation listener error:",
+              conversationError,
+            );
+          }
+        },
+      );
 
     return () => {
       unsubscribeConversations();
 
-      messageUnsubscribers.forEach((unsubscribe) => unsubscribe());
+      messageUnsubscribers.forEach(
+        (unsubscribe) => {
+          unsubscribe();
+        },
+      );
     };
   }, [currentUser]);
+
+  // =====================================================
+  // Sort Users
+  // Latest Message First
+  // =====================================================
+
+  const sortedUsers = [...users].sort(
+    (a, b) => {
+      const timeA =
+        lastMessageTimes[a.uid] || 0;
+
+      const timeB =
+        lastMessageTimes[b.uid] || 0;
+
+      return timeB - timeA;
+    },
+  );
 
   // =====================================================
   // Logout
@@ -201,9 +387,14 @@ const UserList = () => {
         replace: true,
       });
     } catch (logoutError) {
-      console.error("Logout error:", logoutError);
+      console.error(
+        "Logout error:",
+        logoutError,
+      );
 
-      setError("Logout failed. Please try again.");
+      setError(
+        "Logout failed. Please try again.",
+      );
     }
   };
 
@@ -211,7 +402,9 @@ const UserList = () => {
   // Open Chat
   // =====================================================
 
-  const handleMessage = (userId: string) => {
+  const handleMessage = (
+    userId: string,
+  ) => {
     navigate(`/messages/${userId}`);
   };
 
@@ -221,8 +414,19 @@ const UserList = () => {
 
   if (loading) {
     return (
-      <div className="min-vh-100 d-flex align-items-center justify-content-center">
-        <Spinner animation="border" />
+      <div
+        className="min-vh-100 d-flex align-items-center justify-content-center"
+        style={{
+          background: "#f8f9fa",
+        }}
+      >
+        <div className="text-center">
+          <Spinner animation="border" />
+
+          <p className="text-muted mt-3 mb-0">
+            Loading users...
+          </p>
+        </div>
       </div>
     );
   }
@@ -233,302 +437,460 @@ const UserList = () => {
 
   return (
     <div
-      className="min-vh-100 py-5"
+      className="min-vh-100 py-4 py-md-5"
       style={{
-        background: "#f8f9fa",
+        background:
+          "linear-gradient(180deg, #f8f9fa 0%, #eef1f4 100%)",
       }}
     >
       <Container>
-        {/* Header */}
-
         {/* =================================================
-    Premium Header
-================================================= */}
+            Top Header
+        ================================================= */}
 
-        <div className="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    
+        <div className="d-flex justify-content-end align-items-center mb-4">
+          <Button
+            variant="outline-danger"
+            className="rounded-pill px-4"
+            onClick={handleLogout}
+          >
+            <FaSignOutAlt className="me-2" />
 
-   
-  </div>
-
-  <Button
-    variant="outline-danger"
-    className="rounded-pill px-4"
-    onClick={handleLogout}
-  >
-    <FaSignOutAlt className="me-2" />
-    Logout
-  </Button>
-</div>
+            Logout
+          </Button>
+        </div>
 
         {/* Error */}
 
-        {error && <Alert variant="danger">{error}</Alert>}
+        {error && (
+          <Alert
+            variant="danger"
+            dismissible
+            onClose={() =>
+              setError("")
+            }
+          >
+            {error}
+          </Alert>
+        )}
 
         {/* =================================================
             My Profile
         ================================================= */}
 
-        {/* =================================================
-    My Profile
-================================================= */}
-
-{currentUser && (
-  <Card
-    className="border-0 shadow-lg mb-5"
-    style={{
-      borderRadius: "24px",
-      background:
-        "linear-gradient(135deg, #1f2937 0%, #374151 100%)",
-      color: "#fff",
-      overflow: "hidden",
-    }}
-  >
-    <Card.Body className="p-4 p-md-5">
-      <Row className="align-items-center g-4">
-
-        {/* Profile Image */}
-        <Col xs="auto">
-          <div
-            className="d-flex align-items-center justify-content-center overflow-hidden"
+        {currentUser && (
+          <Card
+            className="border-0 shadow-lg mb-5"
             style={{
-              width: "90px",
-              height: "90px",
-              borderRadius: "50%",
-              background: "#fff",
-              border: "4px solid rgba(255,255,255,0.25)",
-              boxShadow:
-                "0 8px 25px rgba(0,0,0,0.25)",
+              borderRadius: "24px",
+
+              background:
+                "linear-gradient(135deg, #1f2937 0%, #374151 100%)",
+
+              color: "#fff",
+
+              overflow: "hidden",
             }}
           >
-            {currentUser.photo ? (
-              <img
-                src={currentUser.photo}
-                alt={currentUser.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-            ) : (
-              <FaUser
-                size={35}
-                className="text-secondary"
-              />
-            )}
-          </div>
-        </Col>
+            <Card.Body className="p-4 p-md-5">
+              <div className="d-flex align-items-center flex-wrap gap-4">
 
-        {/* Profile Info */}
-        <Col>
-          <div className="d-flex align-items-center flex-wrap gap-2 mb-2">
+                {/* Profile Image */}
 
-            <h4 className="fw-bold mb-0">
-              {currentUser.name}
-            </h4>
+                <div
+                  className="d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0"
+                  style={{
+                    width: "90px",
+                    height: "90px",
+                    borderRadius: "50%",
+                    background: "#fff",
+                    border:
+                      "4px solid rgba(255,255,255,0.25)",
+                    boxShadow:
+                      "0 8px 25px rgba(0,0,0,0.25)",
+                  }}
+                >
+                  {currentUser.photo ? (
+                    <img
+                      src={currentUser.photo}
+                      alt={currentUser.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <FaUser
+                      size={35}
+                      className="text-secondary"
+                    />
+                  )}
+                </div>
 
-            <Badge
-              bg="light"
-              text="dark"
-              pill
-            >
-              You
-            </Badge>
+                {/* Profile Info */}
 
-            {currentUser.role === "admin" && (
-              <Badge
-                bg="warning"
-                text="dark"
-                pill
-              >
-                Administrator
-              </Badge>
-            )}
+                <div className="flex-grow-1">
+                  <div className="d-flex align-items-center flex-wrap gap-2 mb-2">
+                    <h4 className="fw-bold mb-0">
+                      {currentUser.name}
+                    </h4>
 
-          </div>
+                    <Badge
+                      bg="light"
+                      text="dark"
+                      pill
+                    >
+                      You
+                    </Badge>
+                  </div>
 
-          <p className="mb-1 opacity-75">
-            {currentUser.email}
-          </p>
+                  <p className="mb-1 opacity-75">
+                    {currentUser.email}
+                  </p>
 
-          <small className="opacity-75">
-            <FaUser className="me-1" />
-            Logged in account
-          </small>
-        </Col>
+                  <small className="opacity-75">
+                    <FaUser className="me-1" />
+                    Logged in account
+                  </small>
+                </div>
 
-        {/* Actions */}
-        <Col
-          xs={12}
-          md="auto"
-        >
-          <div className="d-flex flex-wrap gap-2">
+                {/* Actions */}
 
-            {/* Edit Profile */}
-            <Button
-              variant="light"
-              className="rounded-pill px-4 fw-semibold"
-              onClick={() =>
-                navigate("/user/profile")
-              }
-            >
-              <FaEdit className="me-2" />
-              Edit Profile
-            </Button>
+                <div className="d-flex flex-wrap gap-2">
+                  <Button
+                    variant="light"
+                    className="rounded-pill px-4 fw-semibold"
+                    onClick={() =>
+                      navigate(
+                        "/user/profile",
+                      )
+                    }
+                  >
+                    <FaEdit className="me-2" />
+                    Edit Profile
+                  </Button>
 
-            {/* Dashboard - Admin Only */}
-            {currentUser.role === "admin" && (
-              <Button
-                variant="outline-light"
-                className="rounded-pill px-4 fw-semibold"
-                onClick={() =>
-                  navigate("/admin/dashboard")
-                }
-              >
-                Dashboard
-              </Button>
-            )}
+                  {currentUser.role ===
+                    "admin" && (
+                    <Button
+                      variant="outline-light"
+                      className="rounded-pill px-4 fw-semibold"
+                      onClick={() =>
+                        navigate(
+                          "/admin/dashboard",
+                        )
+                      }
+                    >
+                      Dashboard
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        )}
 
-          </div>
-        </Col>
-
-      </Row>
-    </Card.Body>
-  </Card>
-)}
         {/* =================================================
-            Other Users
+            Messages Header
         ================================================= */}
 
-        <div className="mb-3">
-          <h4 className="fw-bold mb-1">Other Users</h4>
+        <div className="d-flex justify-content-between align-items-end mb-3">
+          <div>
+            <div className="d-flex align-items-center gap-2">
+              <h4 className="fw-bold mb-1">
+                Messages
+              </h4>
 
-          <p className="text-muted">Select a user to start chatting.</p>
+              <Badge
+                bg="dark"
+                pill
+              >
+                {users.length}
+              </Badge>
+            </div>
+
+            <p className="text-muted mb-0">
+              Connect and chat with other users.
+            </p>
+          </div>
         </div>
+
+        {/* =================================================
+            User List
+        ================================================= */}
 
         {users.length === 0 ? (
           <Card className="border-0 shadow-sm rounded-4">
             <Card.Body className="text-center py-5">
-              <FaUser size={45} className="text-muted mb-3" />
+              <FaUser
+                size={45}
+                className="text-muted mb-3"
+              />
 
-              <h5>No other users found</h5>
+              <h5 className="fw-bold">
+                No other users found
+              </h5>
 
               <p className="text-muted mb-0">
-                Once other users register, they will appear here.
+                Once other users register,
+                they will appear here.
               </p>
             </Card.Body>
           </Card>
         ) : (
-          <Row className="g-4">
-            {users.map((user) => {
-              const unread = unreadCounts[user.uid] || 0;
+          <Card
+            className="border-0 shadow-sm overflow-hidden"
+            style={{
+              borderRadius: "24px",
+              background: "#fff",
+            }}
+          >
+            <Card.Body className="p-0">
+              {sortedUsers.map(
+                (user, index) => {
+                  const unread =
+                    unreadCounts[
+                      user.uid
+                    ] || 0;
 
-              const lastMessage = lastMessages[user.uid] || "";
+                  const lastMessage =
+                    lastMessages[
+                      user.uid
+                    ] || "";
 
-              return (
-                <Col key={user.uid} xs={12} sm={6} md={4} lg={3}>
-                  <Card
-                    className="border-0 shadow-sm h-100"
-                    style={{
-                      borderRadius: "20px",
-                    }}
-                  >
-                    <Card.Body className="text-center p-4">
-                      {/* Avatar */}
+                  return (
+                    <div
+                      key={user.uid}
+                      onClick={() =>
+                        handleMessage(
+                          user.uid,
+                        )
+                      }
+                      style={{
+                        cursor:
+                          "pointer",
 
-                      <div
-                        className="mx-auto mb-3 d-flex align-items-center justify-content-center overflow-hidden"
-                        style={{
-                          width: "80px",
-                          height: "80px",
-                          borderRadius: "50%",
-                          background: "#e9ecef",
-                        }}
-                      >
-                        {user.photo ? (
-                          <img
-                            src={user.photo}
-                            alt={user.name}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : (
-                          <FaUser size={32} className="text-secondary" />
-                        )}
-                      </div>
+                        padding:
+                          "16px 20px",
 
-                      {/* Name */}
+                        borderBottom:
+                          index !==
+                          sortedUsers.length -
+                            1
+                            ? "1px solid #edf0f2"
+                            : "none",
 
-                      <div className="d-flex justify-content-center align-items-center gap-2">
-                        <h5 className="fw-bold mb-1">{user.name}</h5>
+                        background:
+                          unread > 0
+                            ? "#fff8f8"
+                            : "#fff",
 
-                        {unread > 0 && (
-                          <Badge bg="danger" pill>
-                            {unread}
-                          </Badge>
-                        )}
-                      </div>
+                        transition:
+                          "all 0.2s ease",
+                      }}
+                      onMouseEnter={(
+                        e,
+                      ) => {
+                        e.currentTarget.style.background =
+                          unread > 0
+                            ? "#fff1f1"
+                            : "#f8f9fa";
 
-                      {/* Email */}
+                        e.currentTarget.style.transform =
+                          "translateX(3px)";
+                      }}
+                      onMouseLeave={(
+                        e,
+                      ) => {
+                        e.currentTarget.style.background =
+                          unread > 0
+                            ? "#fff8f8"
+                            : "#fff";
 
-                      <p
-                        className="text-muted small mb-2"
-                        style={{
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {user.email}
-                      </p>
+                        e.currentTarget.style.transform =
+                          "translateX(0)";
+                      }}
+                    >
+                      <div className="d-flex align-items-center">
 
-                      {/* Last Message */}
+                        {/* =================================================
+                            Profile Photo
+                        ================================================= */}
 
-                      {lastMessage && (
                         <div
-                          className={`small mb-2 ${
-                            unread > 0 ? "fw-semibold text-dark" : "text-muted"
-                          }`}
+                          className="flex-shrink-0"
                           style={{
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            width:
+                              "58px",
+                            height:
+                              "58px",
                           }}
                         >
-                          {lastMessage}
+                          <div
+                            className="rounded-circle overflow-hidden d-flex align-items-center justify-content-center"
+                            style={{
+                              width:
+                                "58px",
+                              height:
+                                "58px",
+
+                              background:
+                                "#f1f3f5",
+
+                              border:
+                                unread >
+                                0
+                                  ? "3px solid #dc3545"
+                                  : "3px solid #e9ecef",
+
+                              transition:
+                                "all 0.2s ease",
+                            }}
+                          >
+                            {user.photo ? (
+                              <img
+                                src={
+                                  user.photo
+                                }
+                                alt={
+                                  user.name
+                                }
+                                style={{
+                                  width:
+                                    "100%",
+                                  height:
+                                    "100%",
+                                  objectFit:
+                                    "cover",
+                                }}
+                              />
+                            ) : (
+                              <FaUser
+                                size={
+                                  24
+                                }
+                                className="text-secondary"
+                              />
+                            )}
+                          </div>
                         </div>
-                      )}
 
-                      {/* Role */}
+                        {/* =================================================
+                            Name + Last Message
+                        ================================================= */}
 
-                      <Badge
-                        bg={user.role === "admin" ? "dark" : "light"}
-                        text={user.role === "admin" ? "light" : "dark"}
-                        className="mb-3"
-                      >
-                        {user.role === "admin" ? "Administrator" : "User"}
-                      </Badge>
+                        <div
+                          className="flex-grow-1 ms-3"
+                          style={{
+                            minWidth:
+                              0,
+                          }}
+                        >
+                          <div className="d-flex align-items-center justify-content-between gap-2">
+                            <h6
+                              className={
+                                unread >
+                                0
+                                  ? "mb-0 fw-bold"
+                                  : "mb-0 fw-semibold"
+                              }
+                              style={{
+                                whiteSpace:
+                                  "nowrap",
 
-                      {/* Message */}
+                                overflow:
+                                  "hidden",
 
-                      <Button
-                        variant={unread > 0 ? "danger" : "dark"}
-                        className="w-100 rounded-pill"
-                        onClick={() => handleMessage(user.uid)}
-                      >
-                        <FaComments className="me-2" />
+                                textOverflow:
+                                  "ellipsis",
+                              }}
+                            >
+                              {
+                                user.name
+                              }
+                            </h6>
 
-                        {unread > 0 ? `${unread} New Message` : "Message"}
-                      </Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              );
-            })}
-          </Row>
+                            {/* Unread Count */}
+
+                            {unread >
+                              0 && (
+                              <Badge
+                                bg="danger"
+                                pill
+                                className="flex-shrink-0"
+                              >
+                                {
+                                  unread
+                                }
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div
+                            className={`small mt-1 ${
+                              unread >
+                              0
+                                ? "fw-semibold text-dark"
+                                : "text-muted"
+                            }`}
+                            style={{
+                              overflow:
+                                "hidden",
+
+                              textOverflow:
+                                "ellipsis",
+
+                              whiteSpace:
+                                "nowrap",
+                            }}
+                          >
+                            {lastMessage ||
+                              "Start a conversation"}
+                          </div>
+                        </div>
+
+                        {/* =================================================
+                            Message Button
+                        ================================================= */}
+
+                        <div className="ms-3 flex-shrink-0">
+                          <Button
+                            variant={
+                              unread >
+                              0
+                                ? "danger"
+                                : "outline-dark"
+                            }
+                            size="sm"
+                            className="rounded-pill px-3"
+                            onClick={(
+                              e,
+                            ) => {
+                              e.stopPropagation();
+
+                              handleMessage(
+                                user.uid,
+                              );
+                            }}
+                          >
+                            <FaComments />
+
+                            <span className="d-none d-md-inline ms-1">
+                              {unread >
+                              0
+                                ? "Reply"
+                                : "Message"}
+                            </span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                },
+              )}
+            </Card.Body>
+          </Card>
         )}
       </Container>
     </div>
