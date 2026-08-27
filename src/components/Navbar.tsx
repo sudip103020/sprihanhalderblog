@@ -40,10 +40,19 @@ const Navbar = () => {
               Home
             </Nav.Link>
 
-            <Nav.Link as={Link} to="/#family">
-              Family
-            </Nav.Link>
-
+           <Nav.Link
+  onClick={() => {
+    if (window.location.pathname !== "/") {
+      window.location.href = "/#family";
+    } else {
+      document.getElementById("family")?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  }}
+>
+  Family
+</Nav.Link>
             <Nav.Link as={Link} to="/memories">
               Memories
             </Nav.Link>
