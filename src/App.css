@@ -108,6 +108,19 @@
   justify-content: center;
   align-items: center;
   padding: 20px;
+  border: 2px solid #f3b6c9;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(231, 84, 128, 0.12);
+}
+
+.hero-image-box::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px dashed #f5c8d7;
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .profile-image {
@@ -143,6 +156,61 @@
   justify-content: center;
   font-size: 22px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+
+/* =========================================================
+   HERO INFO
+========================================================= */
+
+.hero-info-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.hero-info-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.hero-info-box > svg {
+  font-size: 20px;
+}
+
+.hero-info-box div {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.hero-info-box small {
+  color: #888;
+  font-size: 11px;
+}
+
+.hero-info-box strong {
+  font-size: 14px;
+}
+
+.hero-scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 25px;
+  color: #666;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.hero-scroll:hover {
+  color: #000;
 }
 
 
@@ -262,6 +330,38 @@
 
 
 /* =========================================================
+   MEMORY READ MORE
+========================================================= */
+
+.memory-read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 8px 15px;
+  border: 1px solid #e75480;
+  border-radius: 25px;
+  color: #e75480;
+  background: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.memory-read-more:hover {
+  color: #fff;
+  background: #e75480;
+  border-color: #e75480;
+  transform: translateX(3px);
+}
+
+.memory-read-more svg {
+  font-size: 12px;
+}
+
+
+/* =========================================================
    MILESTONES
 ========================================================= */
 
@@ -304,11 +404,112 @@
 
 
 /* =========================================================
+   FAMILY SECTION
+========================================================= */
+
+.family-section {
+  padding: 80px 0;
+  background: #fff;
+}
+
+
+/* =========================================================
+   FAMILY CARD
+========================================================= */
+
+.family-card {
+  overflow: hidden;
+  border-radius: 18px;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.family-card:hover {
+  transform: translateY(-6px);
+}
+
+
+/* =========================================================
+   FAMILY PHOTO - CIRCULAR PROFILE STYLE
+========================================================= */
+
+.family-photo-box {
+  width: 140px;
+  height: 140px;
+  margin: 20px auto 10px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f5f5f5;
+  border: 4px solid #fff;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
+}
+
+.family-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+  transition: transform 0.4s ease;
+}
+
+.family-card:hover .family-photo {
+  transform: scale(1.05);
+}
+
+
+/* =========================================================
+   FAMILY PHOTO PLACEHOLDER
+========================================================= */
+
+.family-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 45px;
+  border-radius: 50%;
+}
+
+
+/* =========================================================
+   FAMILY RELATION
+========================================================= */
+
+.family-relation {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: 20px;
+}
+
+
+/* =========================================================
+   FAMILY NAME
+========================================================= */
+
+.family-name {
+  font-size: 1.1rem;
+}
+
+
+/* =========================================================
+   FAMILY DESCRIPTION
+========================================================= */
+
+.family-description {
+  line-height: 1.6;
+}
+
+
+/* =========================================================
    FOOTER
 ========================================================= */
 
 .footer {
-  margin-top: 0px;
+  margin-top: 0;
   padding: 55px 0 20px;
   background: linear-gradient(
     135deg,
@@ -544,268 +745,17 @@
 }
 
 
-@media (max-width: 767px) {
-  .footer {
-    margin-top: 30px;
-    padding: 30px 0 12px;
-  }
-
-  .footer-title {
-    margin-bottom: 14px;
-    font-size: 1rem;
-  }
-
-  .footer-links li {
-    margin-bottom: 7px;
-  }
-
-  .footer-contact p {
-    margin-bottom: 9px;
-    font-size: 0.85rem;
-  }
-
-  .footer-social-text {
-    margin-bottom: 10px;
-    font-size: 0.82rem;
-  }
-
-  .footer-line {
-    margin: 22px 0 15px;
-  }
-
-  .footer-bottom {
-    gap: 8px;
-  }
-
-  .footer-bottom-right {
-    width: auto;
-    justify-content: center;
-    flex-direction: row;
-    gap: 15px;
-  }
-}
-
-
 /* =========================================================
-   RESPONSIVE - TABLET
+   ADMIN FOOTER
 ========================================================= */
 
-@media (max-width: 991px) {
-  .main-navbar .nav-link {
-    margin-left: 0;
-  }
-
-  .hero-section {
-    padding: 60px 0;
-  }
-
-  .hero-content {
-    text-align: center;
-  }
-
-  .hero-description {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero-buttons {
-    justify-content: center;
-  }
-
-  .hero-image-wrapper {
-    margin-top: 50px;
-  }
-
-  .profile-image {
-    width: 320px;
-    height: 320px;
-  }
-}
-
-
-/* =========================================================
-   RESPONSIVE - MOBILE
-========================================================= */
-
-@media (max-width: 767px) {
-  .main-navbar {
-    padding: 10px 0;
-  }
-
-  .brand {
-    font-size: 21px;
-  }
-
-  .hero-section {
-    min-height: auto;
-    padding: 60px 0;
-  }
-
-  .hero-content h1 {
-    font-size: clamp(38px, 12vw, 55px);
-  }
-
-  .hero-description {
-    font-size: 16px;
-    line-height: 1.7;
-  }
-
-  .hero-image-wrapper {
-    margin-top: 40px;
-  }
-
-  .hero-image-box {
-    width: min(360px, 95%);
-    padding: 15px;
-  }
-
-  .profile-image {
-    width: 290px;
-    height: 290px;
-    border-width: 6px;
-  }
-
-  .hero-heart {
-    right: 0;
-    bottom: 25px;
-    width: 48px;
-    height: 48px;
-    font-size: 19px;
-  }
-
-  .welcome-section,
-  .memories-section,
-  .milestone-section {
-    padding: 65px 0;
-  }
-
-  .section-title {
-    font-size: 32px;
-  }
-
-  .section-text {
-    font-size: 16px;
-  }
-
-  .memory-image {
-    height: 200px;
-  }
-
-  .footer {
-    margin-top: 0px;
-    padding: 40px 0 18px;
-    text-align: center;
-  }
-
-  .footer-brand {
-    padding-right: 0;
-  }
-
-  .footer-description {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .footer-made {
-    justify-content: center;
-  }
-
-  .footer-title::after {
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  .footer-links a {
-    justify-content: center;
-  }
-
-  .footer-contact p {
-    justify-content: center;
-  }
-
-  .footer-social {
-    justify-content: center;
-  }
-
-  .footer-bottom {
-    justify-content: center;
-    text-align: center;
-  }
-
-  .footer-bottom-right {
-    width: 100%;
-    justify-content: center;
-    flex-direction: column;
-    gap: 8px;
-  }
-}
-
-
-/* =========================================================
-   EXTRA SMALL DEVICES
-========================================================= */
-
-@media (max-width: 480px) {
-  .hero-content h1 {
-    font-size: 38px;
-  }
-
-  .hero-description {
-    font-size: 15px;
-  }
-
-  .hero-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .primary-btn,
-  .secondary-btn {
-    width: 100%;
-    max-width: 240px;
-  }
-
-  .profile-image {
-    width: 250px;
-    height: 250px;
-  }
-
-  .hero-heart {
-    right: -2px;
-    bottom: 20px;
-  }
-
-  .section-title {
-    font-size: 29px;
-  }
-
-  .footer-logo {
-    font-size: 1.45rem;
-  }
-}
-
-.hero-image-box {
-  position: relative;
-  width: min(430px, 90%);
-  aspect-ratio: 1 / 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-
-  border: 2px solid #f3b6c9;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 15px 40px rgba(231, 84, 128, 0.12);
-}
-
-.hero-image-box::before {
-  content: "";
-  position: absolute;
-  inset: 8px;
-  border: 1px dashed #f5c8d7;
-  border-radius: 50%;
-  pointer-events: none;
+.admin-footer {
+  text-align: center;
+  padding: 10px 15px;
+  font-size: 13px;
+  color: #6c757d;
+  border-top: 1px solid #eee;
+  background: #fff;
 }
 
 
@@ -860,7 +810,7 @@
 
 
 /* =========================================================
-   STAT ICON
+   DASHBOARD STAT ICON
 ========================================================= */
 
 .dashboard-stat-icon {
@@ -882,7 +832,7 @@
 
 
 /* =========================================================
-   STAT CONTENT
+   DASHBOARD STAT CONTENT
 ========================================================= */
 
 .dashboard-stat-label {
@@ -908,7 +858,7 @@
 
 
 /* =========================================================
-   CATEGORY CARDS
+   DASHBOARD CATEGORY CARDS
 ========================================================= */
 
 .dashboard-category-card {
@@ -942,7 +892,7 @@
 
 
 /* =========================================================
-   CATEGORY ICON
+   DASHBOARD CATEGORY ICON
 ========================================================= */
 
 .dashboard-category-icon {
@@ -958,7 +908,7 @@
 
 
 /* =========================================================
-   CATEGORY COUNT
+   DASHBOARD CATEGORY COUNT
 ========================================================= */
 
 .dashboard-category-count {
@@ -993,7 +943,7 @@
 
 
 /* =========================================================
-   QUICK ACTION BUTTONS
+   DASHBOARD QUICK ACTIONS
 ========================================================= */
 
 .dashboard-action-btn {
@@ -1013,38 +963,8 @@
 
 
 /* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media (max-width: 767px) {
-  .dashboard-stat-card {
-    border-radius: 18px !important;
-  }
-
-  .dashboard-stat-icon {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    font-size: 24px;
-  }
-
-  .dashboard-stat-number {
-    font-size: 28px;
-  }
-
-  .dashboard-category-card {
-    border-radius: 18px !important;
-  }
-
-  .dashboard-section-title {
-    font-size: 20px;
-  }
-}
-
-
-/* ================================
    DASHBOARD HEADER
-================================ */
+========================================================= */
 
 .dashboard-header-btn {
   width: 44px;
@@ -1065,26 +985,260 @@
 }
 
 
-/* ================================
-   DASHBOARD MOBILE
-================================ */
+/* =========================================================
+   TABLET RESPONSIVE
+========================================================= */
+
+@media (max-width: 991px) {
+
+  .main-navbar .nav-link {
+    margin-left: 0;
+  }
+
+  .hero-section {
+    padding: 60px 0;
+  }
+
+  .hero-content {
+    text-align: center;
+  }
+
+  .hero-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 40px;
+  }
+
+  .hero-info-wrapper {
+    justify-content: center;
+  }
+
+  .hero-scroll {
+    justify-content: center;
+  }
+
+  .profile-image {
+    width: 320px;
+    height: 320px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE RESPONSIVE
+========================================================= */
 
 @media (max-width: 767px) {
 
-  /* Main dashboard spacing */
+  /* Navbar */
+
+  .main-navbar {
+    padding: 10px 0;
+  }
+
+  .brand {
+    font-size: 21px;
+  }
+
+
+  /* Hero */
+
+  .hero-section {
+    min-height: auto;
+    padding: 60px 0;
+  }
+
+  .hero-content h1 {
+    font-size: clamp(38px, 12vw, 55px);
+  }
+
+  .hero-description {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 40px;
+  }
+
+  .hero-image-box {
+    width: min(360px, 95%);
+    padding: 15px;
+  }
+
+  .profile-image {
+    width: 290px;
+    height: 290px;
+    border-width: 6px;
+  }
+
+  .hero-heart {
+    right: 0;
+    bottom: 25px;
+    width: 48px;
+    height: 48px;
+    font-size: 19px;
+  }
+
+
+  /* Hero Info */
+
+  .hero-info-box {
+    padding: 8px 12px;
+  }
+
+  .hero-info-box strong {
+    font-size: 12px;
+  }
+
+  .hero-info-box small {
+    font-size: 10px;
+  }
+
+
+  /* Common Sections */
+
+  .welcome-section,
+  .memories-section,
+  .milestone-section {
+    padding: 65px 0;
+  }
+
+  .section-title {
+    font-size: 32px;
+  }
+
+  .section-text {
+    font-size: 16px;
+  }
+
+
+  /* Memories */
+
+  .memory-image {
+    height: 200px;
+  }
+
+  .memory-read-more {
+    font-size: 13px;
+    padding: 7px 13px;
+  }
+
+
+  /* Family */
+
+  .family-section {
+    padding: 60px 0;
+  }
+
+  .family-photo-box {
+    width: 115px;
+    height: 115px;
+    margin: 18px auto 8px;
+  }
+
+  .family-card {
+    max-width: 340px;
+    margin: 0 auto;
+  }
+
+
+  /* Footer */
+
+  .footer {
+    margin-top: 0;
+    padding: 40px 0 18px;
+    text-align: center;
+  }
+
+  .footer-brand {
+    padding-right: 0;
+  }
+
+  .footer-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .footer-made {
+    justify-content: center;
+  }
+
+  .footer-title {
+    margin-bottom: 14px;
+    font-size: 1rem;
+  }
+
+  .footer-title::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .footer-links li {
+    margin-bottom: 7px;
+  }
+
+  .footer-links a {
+    justify-content: center;
+  }
+
+  .footer-contact p {
+    justify-content: center;
+    margin-bottom: 9px;
+    font-size: 0.85rem;
+  }
+
+  .footer-social-text {
+    margin-bottom: 10px;
+    font-size: 0.82rem;
+  }
+
+  .footer-social {
+    justify-content: center;
+  }
+
+  .footer-line {
+    margin: 22px 0 15px;
+  }
+
+  .footer-bottom {
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .footer-bottom-right {
+    width: 100%;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .footer .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .footer .row > .col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+
+  /* Dashboard */
+
   .dashboard-container {
     padding-top: 20px !important;
     padding-bottom: 25px !important;
   }
 
-  /* Header */
-  .dashboard-header-btn {
-    width: 40px;
-    height: 40px;
-    font-size: 15px;
-  }
-
-  /* Overview */
   .dashboard-stat-card {
     border-radius: 16px !important;
   }
@@ -1111,8 +1265,6 @@
     font-size: 23px;
   }
 
-
-  /* Category */
   .dashboard-category-card {
     border-radius: 16px !important;
   }
@@ -1151,14 +1303,16 @@
     line-height: 1.4;
   }
 
-
-  /* Section headings */
   .dashboard-section-title {
     font-size: 19px;
   }
 
+  .dashboard-header-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+  }
 
-  /* Quick Actions */
   .dashboard-action-btn {
     min-height: 48px;
     padding: 10px !important;
@@ -1167,250 +1321,47 @@
   }
 }
 
-@media (max-width: 767px) {
-  .footer .row {
-    display: flex;
-    flex-wrap: wrap;
+
+/* =========================================================
+   EXTRA SMALL DEVICES
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .hero-content h1 {
+    font-size: 38px;
   }
 
-  .footer .row > .col-6 {
-    flex: 0 0 50%;
-    max-width: 50%;
-  }
-}
-
-.admin-footer {
-  text-align: center;
-  padding: 10px 15px;
-  font-size: 13px;
-  color: #6c757d;
-  border-top: 1px solid #eee;
-  background: #fff;
-}
-
-.hero-info-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 25px;
-}
-
-.hero-info-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 15px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-}
-
-.hero-info-box > svg {
-  font-size: 20px;
-}
-
-.hero-info-box div {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.hero-info-box small {
-  color: #888;
-  font-size: 11px;
-}
-
-.hero-info-box strong {
-  font-size: 14px;
-}
-
-.hero-scroll {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 25px;
-  color: #666;
-  text-decoration: none;
-  font-size: 13px;
-}
-
-.hero-scroll:hover {
-  color: #000;
-}
-
-@media (max-width: 991px) {
-  .hero-image-wrapper {
-    margin-top: 40px;
-  }
-
-  .hero-info-wrapper {
-    justify-content: center;
+  .hero-description {
+    font-size: 15px;
   }
 
   .hero-buttons {
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
   }
 
-  .hero-scroll {
-    justify-content: center;
-  }
-}
-
-@media (max-width: 576px) {
-  .hero-info-box {
-    padding: 8px 12px;
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    max-width: 240px;
   }
 
-  .hero-info-box strong {
-    font-size: 12px;
+  .profile-image {
+    width: 250px;
+    height: 250px;
   }
 
-  .hero-info-box small {
-    font-size: 10px;
-  }
-}
-
-/* =========================================
-   Family Section
-========================================= */
-
-.family-section {
-  padding: 80px 0;
-  background: #fff;
-}
-
-/* =========================================
-   Family Card
-========================================= */
-
-.family-card {
-  overflow: hidden;
-  border-radius: 18px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.family-card:hover {
-  transform: translateY(-6px);
-}
-
-/* =========================================
-   Family Photo
-========================================= */
-
-.family-photo-box {
-  width: 100%;
-  height: 250px;
-  overflow: hidden;
-  background: #f5f5f5;
-}
-
-.family-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform 0.4s ease;
-}
-
-.family-card:hover .family-photo {
-  transform: scale(1.05);
-}
-
-/* =========================================
-   No Photo
-========================================= */
-
-.family-photo-placeholder {
-  width: 100%;
-  height: 100%;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  color: #aaa;
-  font-size: 55px;
-}
-
-/* =========================================
-   Relation
-========================================= */
-
-.family-relation {
-  font-size: 0.75rem;
-  padding: 6px 10px;
-  border-radius: 20px;
-}
-
-/* =========================================
-   Name
-========================================= */
-
-.family-name {
-  font-size: 1.1rem;
-}
-
-/* =========================================
-   Description
-========================================= */
-
-.family-description {
-  line-height: 1.6;
-}
-
-/* =========================================
-   Mobile
-========================================= */
-
-@media (max-width: 576px) {
-  .family-section {
-    padding: 60px 0;
+  .hero-heart {
+    right: -2px;
+    bottom: 20px;
   }
 
-  .family-photo-box {
-    height: 280px;
+  .section-title {
+    font-size: 29px;
   }
 
-  .family-card {
-    max-width: 340px;
-    margin: 0 auto;
-  }
-}
-
-/* =========================================================
-   MEMORY READ MORE
-========================================================= */
-
-.memory-read-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 12px;
-  padding: 8px 15px;
-  border: 1px solid #e75480;
-  border-radius: 25px;
-  color: #e75480;
-  background: #fff;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.25s ease;
-}
-
-.memory-read-more:hover {
-  color: #fff;
-  background: #e75480;
-  border-color: #e75480;
-  transform: translateX(3px);
-}
-
-.memory-read-more svg {
-  font-size: 12px;
-}
-
-@media (max-width: 576px) {
-  .memory-read-more {
-    font-size: 13px;
-    padding: 7px 13px;
+  .footer-logo {
+    font-size: 1.45rem;
   }
 }
