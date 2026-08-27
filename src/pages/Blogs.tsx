@@ -7,7 +7,6 @@ import {
   Card,
   Spinner,
   Alert,
-  Button,
   Badge,
   Image,
 } from "react-bootstrap";
