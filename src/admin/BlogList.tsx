@@ -20,6 +20,7 @@ import {
   FaEye,
   FaArrowLeft,
   FaBlog,
+  FaHome,
 } from "react-icons/fa";
 
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,7 @@ import {
   orderBy,
   query,
   Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 
 import { db } from "../firebase/config";
@@ -45,6 +47,7 @@ interface BlogPostItem {
   imagePublicId?: string;
   imageName?: string;
   status?: "published" | "draft";
+  showOnHome?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -64,6 +67,9 @@ const BlogList = () => {
   const [deleteLoading, setDeleteLoading] =
     useState("");
 
+  const [homeLoading, setHomeLoading] =
+    useState("");
+
   const [selectedBlog, setSelectedBlog] =
     useState<BlogPostItem | null>(null);
 
@@ -73,6 +79,7 @@ const BlogList = () => {
   // =========================
   // Load Blogs
   // =========================
+
   const loadBlogs = async () => {
     try {
       setLoading(true);
@@ -87,8 +94,7 @@ const BlogList = () => {
 
       const data: BlogPostItem[] =
         snapshot.docs.map((item) => {
-          const blog =
-            item.data();
+          const blog = item.data();
 
           return {
             id: item.id,
@@ -100,17 +106,21 @@ const BlogList = () => {
             image:
               blog.image || "",
             imagePublicId:
-              blog.imagePublicId ||
-              "",
+              blog.imagePublicId || "",
             imageName:
               blog.imageName || "",
+
             status:
-              blog.status ===
-              "draft"
+              blog.status === "draft"
                 ? "draft"
                 : "published",
+
+            showOnHome:
+              blog.showOnHome === true,
+
             createdAt:
               blog.createdAt,
+
             updatedAt:
               blog.updatedAt,
           };
@@ -136,8 +146,62 @@ const BlogList = () => {
   }, []);
 
   // =========================
+  // Toggle Home
+  // =========================
+
+  const handleToggleHome = async (
+    blog: BlogPostItem
+  ) => {
+    if (blog.status === "draft") {
+      return;
+    }
+
+    try {
+      setHomeLoading(blog.id);
+      setError("");
+
+      const newValue =
+        !blog.showOnHome;
+
+      await updateDoc(
+        doc(
+          db,
+          "blogPosts",
+          blog.id
+        ),
+        {
+          showOnHome: newValue,
+        }
+      );
+
+      setBlogs((prev) =>
+        prev.map((item) =>
+          item.id === blog.id
+            ? {
+                ...item,
+                showOnHome: newValue,
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Toggle home error:",
+        error
+      );
+
+      setError(
+        "Home visibility update করতে সমস্যা হয়েছে।"
+      );
+    } finally {
+      setHomeLoading("");
+    }
+  };
+
+  // =========================
   // Delete Blog
   // =========================
+
   const handleDelete = async (
     blog: BlogPostItem
   ) => {
@@ -183,6 +247,7 @@ const BlogList = () => {
   // =========================
   // Format Date
   // =========================
+
   const formatDate = (
     timestamp?: Timestamp
   ) => {
@@ -205,6 +270,7 @@ const BlogList = () => {
   // =========================
   // Loading
   // =========================
+
   if (loading) {
     return (
       <div
@@ -214,11 +280,13 @@ const BlogList = () => {
         }}
       >
         <div className="text-center">
+
           <Spinner animation="border" />
 
           <p className="text-muted mt-3">
             Loading blogs...
           </p>
+
         </div>
       </div>
     );
@@ -231,12 +299,15 @@ const BlogList = () => {
         background: "#f5f6f8",
       }}
     >
+
       <Container>
-        {/* =========================
-            Header
-        ========================= */}
+
+        {/* Header */}
+
         <div className="d-flex justify-content-between align-items-center mb-4">
+
           <div>
+
             <h2 className="fw-bold mb-1">
               Blog Posts
             </h2>
@@ -244,9 +315,11 @@ const BlogList = () => {
             <p className="text-muted mb-0">
               Manage Sprihan's blog posts
             </p>
+
           </div>
 
           <div className="d-flex gap-2">
+
             <Button
               variant="outline-dark"
               onClick={() =>
@@ -270,10 +343,13 @@ const BlogList = () => {
               <FaPlus className="me-2" />
               Write Blog
             </Button>
+
           </div>
+
         </div>
 
         {/* Error */}
+
         {error && (
           <Alert
             variant="danger"
@@ -286,12 +362,14 @@ const BlogList = () => {
           </Alert>
         )}
 
-        {/* =========================
-            Empty
-        ========================= */}
+        {/* Empty */}
+
         {blogs.length === 0 ? (
+
           <Card className="border-0 shadow-sm">
+
             <Card.Body className="text-center py-5">
+
               <FaBlog
                 size={55}
                 className="text-muted mb-3"
@@ -302,8 +380,7 @@ const BlogList = () => {
               </h4>
 
               <p className="text-muted">
-                আপনার প্রথম blog post
-                লিখুন।
+                আপনার প্রথম blog post লিখুন।
               </p>
 
               <Button
@@ -317,51 +394,65 @@ const BlogList = () => {
                 <FaPlus className="me-2" />
                 Write First Blog
               </Button>
+
             </Card.Body>
+
           </Card>
+
         ) : (
+
           <Row className="g-4">
+
             {blogs.map((blog) => (
+
               <Col
                 xs={12}
                 md={6}
                 lg={4}
                 key={blog.id}
               >
+
                 <Card
                   className="border-0 shadow-sm h-100"
                   style={{
                     overflow: "hidden",
                   }}
                 >
+
                   {/* Image */}
+
                   {blog.image ? (
+
                     <Image
                       src={blog.image}
                       style={{
                         height: "220px",
                         width: "100%",
-                        objectFit:
-                          "cover",
+                        objectFit: "cover",
                       }}
                     />
+
                   ) : (
+
                     <div
                       className="d-flex align-items-center justify-content-center"
                       style={{
                         height: "220px",
-                        background:
-                          "#e9ecef",
+                        background: "#e9ecef",
                         color: "#999",
                       }}
                     >
                       <FaBlog size={50} />
                     </div>
+
                   )}
 
                   <Card.Body className="p-4">
+
                     {/* Status + Date */}
+
                     <div className="d-flex justify-content-between align-items-center mb-2">
+
                       <Badge
                         bg={
                           blog.status ===
@@ -370,8 +461,7 @@ const BlogList = () => {
                             : "secondary"
                         }
                       >
-                        {blog.status ||
-                          "published"}
+                        {blog.status}
                       </Badge>
 
                       <small className="text-muted">
@@ -379,14 +469,45 @@ const BlogList = () => {
                           blog.createdAt
                         )}
                       </small>
+
+                    </div>
+
+                    {/* Home Status */}
+
+                    <div className="mb-3">
+
+                      {blog.showOnHome &&
+                      blog.status ===
+                        "published" ? (
+
+                        <Badge bg="primary">
+                          <FaHome className="me-1" />
+                          Showing on Home
+                        </Badge>
+
+                      ) : (
+
+                        <Badge
+                          bg="light"
+                          text="dark"
+                          className="border"
+                        >
+                          <FaHome className="me-1" />
+                          Hidden from Home
+                        </Badge>
+
+                      )}
+
                     </div>
 
                     {/* Title */}
+
                     <h5 className="fw-bold mb-2">
                       {blog.title}
                     </h5>
 
                     {/* Description */}
+
                     <p
                       className="text-muted mb-3"
                       style={{
@@ -402,8 +523,57 @@ const BlogList = () => {
                       {blog.description}
                     </p>
 
+                    {/* Home Toggle */}
+
+                    <Button
+                      variant={
+                        blog.showOnHome
+                          ? "outline-primary"
+                          : "outline-secondary"
+                      }
+                      size="sm"
+                      className="w-100 mb-3"
+                      disabled={
+                        blog.status ===
+                          "draft" ||
+                        homeLoading ===
+                          blog.id
+                      }
+                      onClick={() =>
+                        handleToggleHome(
+                          blog
+                        )
+                      }
+                    >
+
+                      {homeLoading ===
+                      blog.id ? (
+
+                        <Spinner
+                          animation="border"
+                          size="sm"
+                          className="me-2"
+                        />
+
+                      ) : (
+
+                        <FaHome className="me-2" />
+
+                      )}
+
+                      {blog.status ===
+                      "draft"
+                        ? "Draft - Hidden"
+                        : blog.showOnHome
+                        ? "Remove from Home"
+                        : "Show on Home"}
+
+                    </Button>
+
                     {/* Buttons */}
+
                     <div className="d-flex gap-2">
+
                       <Button
                         variant="outline-dark"
                         size="sm"
@@ -412,6 +582,7 @@ const BlogList = () => {
                           setSelectedBlog(
                             blog
                           );
+
                           setShowPreview(
                             true
                           );
@@ -456,18 +627,25 @@ const BlogList = () => {
                           <FaTrash />
                         )}
                       </Button>
+
                     </div>
+
                   </Card.Body>
+
                 </Card>
+
               </Col>
+
             ))}
+
           </Row>
+
         )}
+
       </Container>
 
-      {/* =========================
-          Preview Modal
-      ========================= */}
+      {/* Preview Modal */}
+
       <Modal
         show={showPreview}
         onHide={() =>
@@ -477,13 +655,17 @@ const BlogList = () => {
         centered
         scrollable
       >
+
         <Modal.Header closeButton>
+
           <Modal.Title className="fw-bold">
             Blog Preview
           </Modal.Title>
+
         </Modal.Header>
 
         <Modal.Body>
+
           {selectedBlog?.image && (
             <Image
               src={selectedBlog.image}
@@ -497,7 +679,9 @@ const BlogList = () => {
 
           {selectedBlog && (
             <>
+
               <div className="mb-3">
+
                 <Badge
                   bg={
                     selectedBlog.status ===
@@ -508,6 +692,19 @@ const BlogList = () => {
                 >
                   {selectedBlog.status}
                 </Badge>
+
+                {selectedBlog.showOnHome &&
+                  selectedBlog.status ===
+                    "published" && (
+                    <Badge
+                      bg="primary"
+                      className="ms-2"
+                    >
+                      <FaHome className="me-1" />
+                      Home
+                    </Badge>
+                  )}
+
               </div>
 
               <h1 className="fw-bold mb-3">
@@ -515,31 +712,28 @@ const BlogList = () => {
               </h1>
 
               <p className="lead text-muted">
-                {
-                  selectedBlog.description
-                }
+                {selectedBlog.description}
               </p>
 
               <hr />
 
               <div
                 style={{
-                  whiteSpace:
-                    "pre-wrap",
+                  whiteSpace: "pre-wrap",
                   lineHeight: 1.9,
-                  fontSize:
-                    "17px",
+                  fontSize: "17px",
                 }}
               >
-                {
-                  selectedBlog.content
-                }
+                {selectedBlog.content}
               </div>
+
             </>
           )}
+
         </Modal.Body>
 
         <Modal.Footer>
+
           {selectedBlog && (
             <Button
               variant="outline-primary"
@@ -564,8 +758,11 @@ const BlogList = () => {
           >
             Close
           </Button>
+
         </Modal.Footer>
+
       </Modal>
+
     </div>
   );
 };

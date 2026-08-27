@@ -5,6 +5,12 @@ import AdminLayout from "../layouts/AdminLayout";
 
 import Home from "../pages/Home";
 
+import Memoriespublic from "../pages/Memories";
+import BlogDetails from "../pages/BlogDetails";
+import Blogs from "../pages/Blogs";
+
+import MemoryDetails from "../pages/MemoryDetails";
+
 import Login from "../admin/Login";
 import Dashboard from "../admin/Dashboard";
 import Memories from "../admin/Memories";
@@ -18,6 +24,8 @@ import DocumentList from "../admin/DocumentList";
 import DocumentPost from "../admin/DocumentPost";
 
 import UserRegister from "../admin/UserRegister";
+
+import FamilyMembers from "../admin/FamilyMembers";
 
 import UserList from "../admin/UserList";
 import UserProtectedRoute from "../admin/UserProtectedRoute";
@@ -37,6 +45,21 @@ const AppRoutes = () => {
 
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/memories" element={<Memoriespublic />} />
+        <Route
+  path="/blog/:id"
+  element={<BlogDetails />}
+  
+/>
+<Route
+  path="/blogs"
+  element={<Blogs />}
+/>
+
+<Route
+  path="/memory/:id"
+  element={<MemoryDetails />}
+/>
 
         <Route path="/admin/login" element={<Login />} />
       </Route>
@@ -65,6 +88,19 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* =========================
+    FAMILY MEMBERS
+========================== */}
+
+<Route
+  path="/admin/family-members"
+  element={
+    <ProtectedRoute>
+      <FamilyMembers />
+    </ProtectedRoute>
+  }
+/>
 
         {/* User List */}
         <Route

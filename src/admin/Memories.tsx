@@ -11,6 +11,7 @@ import {
   Alert,
   Badge,
 } from "react-bootstrap";
+
 import {
   FaTrash,
   FaSave,
@@ -19,13 +20,17 @@ import {
   FaLock,
   FaVideo,
   FaImage,
+  FaHome,
 } from "react-icons/fa";
+
 import { useNavigate } from "react-router-dom";
+
 import {
   addDoc,
   collection,
   serverTimestamp,
 } from "firebase/firestore";
+
 import { db } from "../firebase/config";
 
 interface SelectedMedia {
@@ -51,6 +56,9 @@ const Memories = () => {
   const [description, setDescription] = useState("");
   const [comment, setComment] = useState("");
 
+  // ⭐ Show on Home
+  const [showOnHome, setShowOnHome] = useState(false);
+
   const [media, setMedia] = useState<SelectedMedia[]>([]);
 
   const [uploading, setUploading] = useState(false);
@@ -59,7 +67,10 @@ const Memories = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // =====================================================
   // Select Image + Video
+  // =====================================================
+
   const handleMediaSelect = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -90,7 +101,10 @@ const Memories = () => {
     event.target.value = "";
   };
 
-  // Remove selected media
+  // =====================================================
+  // Remove Selected Media
+  // =====================================================
+
   const removeMedia = (index: number) => {
     setMedia((prev) => {
       const item = prev[index];
@@ -103,7 +117,10 @@ const Memories = () => {
     });
   };
 
-  // Change visibility
+  // =====================================================
+  // Change Visibility
+  // =====================================================
+
   const changeVisibility = (
     index: number,
     visibility: "public" | "private"
@@ -117,7 +134,10 @@ const Memories = () => {
     );
   };
 
-  // Upload Image / Video to Cloudinary
+  // =====================================================
+  // Upload to Cloudinary
+  // =====================================================
+
   const uploadToCloudinary = async (
     item: SelectedMedia
   ): Promise<UploadedMedia> => {
@@ -168,7 +188,10 @@ const Memories = () => {
     };
   };
 
+  // =====================================================
   // Save Memory
+  // =====================================================
+
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
@@ -201,9 +224,8 @@ const Memories = () => {
       const uploadedMedia: UploadedMedia[] = [];
 
       for (let i = 0; i < media.length; i++) {
-        const uploaded = await uploadToCloudinary(
-          media[i]
-        );
+        const uploaded =
+          await uploadToCloudinary(media[i]);
 
         uploadedMedia.push(uploaded);
 
@@ -214,16 +236,23 @@ const Memories = () => {
         setProgress(currentProgress);
       }
 
+      // =================================================
+      // Save Firestore
+      // =================================================
+
       await addDoc(collection(db, "memories"), {
         date,
         type,
         description: description.trim(),
         comment: comment.trim(),
 
-        // New structure
+        // ⭐ Home Page Control
+        showOnHome,
+
+        // Media
         media: uploadedMedia,
 
-        // Keep this for compatibility if needed
+        // Compatibility
         images: uploadedMedia.filter(
           (item) => item.mediaType === "image"
         ),
@@ -232,16 +261,23 @@ const Memories = () => {
         updatedAt: serverTimestamp(),
       });
 
-      setSuccess("Memory সফলভাবে যোগ হয়েছে।");
+      setSuccess(
+        showOnHome
+          ? "Memory সফলভাবে যোগ হয়েছে এবং Home page-এ দেখানো হবে।"
+          : "Memory সফলভাবে যোগ হয়েছে।"
+      );
 
+      // Revoke previews
       media.forEach((item) => {
         URL.revokeObjectURL(item.preview);
       });
 
+      // Reset
       setDate("");
       setType("");
       setDescription("");
       setComment("");
+      setShowOnHome(false);
       setMedia([]);
       setProgress(0);
     } catch (error) {
@@ -257,11 +293,17 @@ const Memories = () => {
     }
   };
 
+  // =====================================================
+  // UI
+  // =====================================================
+
   return (
     <div className="min-vh-100 bg-light py-4">
       <Container>
+
         {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
+
           <div>
             <h2 className="fw-bold mb-1">
               Add Memory
@@ -281,8 +323,10 @@ const Memories = () => {
             <FaArrowLeft className="me-2" />
             Dashboard
           </Button>
+
         </div>
 
+        {/* Error */}
         {error && (
           <Alert
             variant="danger"
@@ -293,6 +337,7 @@ const Memories = () => {
           </Alert>
         )}
 
+        {/* Success */}
         {success && (
           <Alert
             variant="success"
@@ -304,12 +349,20 @@ const Memories = () => {
         )}
 
         <Card className="border-0 shadow-sm">
+
           <Card.Body className="p-4">
+
             <Form onSubmit={handleSubmit}>
+
               <Row className="g-4">
-                {/* Date */}
+
+                {/* =========================
+                    Date
+                ========================== */}
+
                 <Col md={6}>
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
                       Date{" "}
                       <span className="text-danger">
@@ -325,12 +378,17 @@ const Memories = () => {
                       }
                       required
                     />
+
                   </Form.Group>
                 </Col>
 
-                {/* Type */}
+                {/* =========================
+                    Type
+                ========================== */}
+
                 <Col md={6}>
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
                       Type{" "}
                       <span className="text-danger">
@@ -345,6 +403,7 @@ const Memories = () => {
                       }
                       required
                     >
+
                       <option value="">
                         Select Memory Type
                       </option>
@@ -372,13 +431,19 @@ const Memories = () => {
                       <option value="other">
                         📌 Other
                       </option>
+
                     </Form.Select>
+
                   </Form.Group>
                 </Col>
 
-                {/* Description */}
+                {/* =========================
+                    Description
+                ========================== */}
+
                 <Col xs={12}>
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
                       Description
                     </Form.Label>
@@ -392,12 +457,17 @@ const Memories = () => {
                         setDescription(e.target.value)
                       }
                     />
+
                   </Form.Group>
                 </Col>
 
-                {/* Photos + Videos */}
+                {/* =========================
+                    Photos + Videos
+                ========================== */}
+
                 <Col xs={12}>
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
                       Photos & Videos{" "}
                       <span className="text-danger">
@@ -416,18 +486,25 @@ const Memories = () => {
                       একসাথে একাধিক ছবি ও ভিডিও নির্বাচন
                       করতে পারবেন।
                     </Form.Text>
+
                   </Form.Group>
                 </Col>
 
-                {/* Preview */}
+                {/* =========================
+                    Preview
+                ========================== */}
+
                 {media.length > 0 && (
                   <Col xs={12}>
+
                     <h6 className="fw-bold mb-3">
                       Selected Media ({media.length})
                     </h6>
 
                     <Row className="g-3">
+
                       {media.map((item, index) => (
+
                         <Col
                           xs={12}
                           sm={6}
@@ -435,7 +512,9 @@ const Memories = () => {
                           lg={3}
                           key={`${item.file.name}-${index}`}
                         >
+
                           <Card className="h-100 border shadow-sm">
+
                             <div
                               style={{
                                 height: "190px",
@@ -443,6 +522,7 @@ const Memories = () => {
                                 background: "#111",
                               }}
                             >
+
                               {item.mediaType ===
                               "video" ? (
                                 <video
@@ -462,10 +542,13 @@ const Memories = () => {
                                   }}
                                 />
                               )}
+
                             </div>
 
                             <Card.Body className="p-3">
+
                               <div className="mb-2">
+
                                 <Badge
                                   bg={
                                     item.mediaType ===
@@ -474,6 +557,7 @@ const Memories = () => {
                                       : "secondary"
                                   }
                                 >
+
                                   {item.mediaType ===
                                   "video" ? (
                                     <>
@@ -486,7 +570,9 @@ const Memories = () => {
                                       Image
                                     </>
                                   )}
+
                                 </Badge>
+
                               </div>
 
                               <div
@@ -497,6 +583,7 @@ const Memories = () => {
                               </div>
 
                               <div className="d-flex gap-2 mb-3">
+
                                 <Button
                                   type="button"
                                   size="sm"
@@ -536,6 +623,7 @@ const Memories = () => {
                                   <FaLock className="me-1" />
                                   Private
                                 </Button>
+
                               </div>
 
                               <Button
@@ -550,17 +638,66 @@ const Memories = () => {
                                 <FaTrash className="me-1" />
                                 Remove
                               </Button>
+
                             </Card.Body>
+
                           </Card>
+
                         </Col>
+
                       ))}
+
                     </Row>
+
                   </Col>
                 )}
 
-                {/* Comment */}
+                {/* =========================
+                    Show On Home
+                ========================== */}
+
                 <Col xs={12}>
+
+                  <Card className="border bg-light">
+
+                    <Card.Body>
+
+                      <Form.Check
+                        type="switch"
+                        id="show-on-home"
+                        checked={showOnHome}
+                        onChange={(e) =>
+                          setShowOnHome(
+                            e.target.checked
+                          )
+                        }
+                        label={
+                          <span className="fw-semibold">
+                            <FaHome className="me-2" />
+                            Show this Memory on Home page
+                          </span>
+                        }
+                      />
+
+                      <Form.Text className="text-muted ms-4">
+                        চালু করলে এই Memory Home page-এর
+                        Featured Memories section-এ দেখা যাবে।
+                      </Form.Text>
+
+                    </Card.Body>
+
+                  </Card>
+
+                </Col>
+
+                {/* =========================
+                    Comment
+                ========================== */}
+
+                <Col xs={12}>
+
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
                       Comment
                     </Form.Label>
@@ -574,14 +711,22 @@ const Memories = () => {
                         setComment(e.target.value)
                       }
                     />
+
                   </Form.Group>
+
                 </Col>
 
-                {/* Progress */}
+                {/* =========================
+                    Progress
+                ========================== */}
+
                 {uploading && (
                   <Col xs={12}>
+
                     <div>
+
                       <div className="d-flex justify-content-between mb-1">
+
                         <small className="text-muted">
                           Uploading media...
                         </small>
@@ -589,37 +734,54 @@ const Memories = () => {
                         <small className="fw-bold">
                           {progress}%
                         </small>
+
                       </div>
 
                       <ProgressBar
                         now={progress}
                         label={`${progress}%`}
                       />
+
                     </div>
+
                   </Col>
                 )}
 
-                {/* Submit */}
+                {/* =========================
+                    Submit
+                ========================== */}
+
                 <Col xs={12}>
+
                   <div className="d-flex justify-content-end">
+
                     <Button
                       type="submit"
                       variant="dark"
                       size="lg"
                       disabled={uploading}
                     >
+
                       <FaSave className="me-2" />
 
                       {uploading
                         ? "Uploading..."
                         : "Save Memory"}
+
                     </Button>
+
                   </div>
+
                 </Col>
+
               </Row>
+
             </Form>
+
           </Card.Body>
+
         </Card>
+
       </Container>
     </div>
   );

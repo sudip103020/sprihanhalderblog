@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   Container,
   Card,
@@ -19,6 +20,7 @@ import {
   FaImage,
   FaEye,
   FaTrash,
+  FaHome,
 } from "react-icons/fa";
 
 import { useNavigate, useParams } from "react-router-dom";
@@ -43,6 +45,7 @@ const BlogPost = () => {
   // =========================
   // Loading
   // =========================
+
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -50,6 +53,7 @@ const BlogPost = () => {
   // =========================
   // Blog fields
   // =========================
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
@@ -58,33 +62,37 @@ const BlogPost = () => {
   const [imagePublicId, setImagePublicId] = useState("");
   const [imageName, setImageName] = useState("");
 
-  const [status, setStatus] = useState<
-    "published" | "draft"
-  >("published");
+  const [status, setStatus] =
+    useState<"published" | "draft">("published");
+
+  const [showOnHome, setShowOnHome] = useState(false);
 
   // =========================
   // Image
   // =========================
+
   const [imageFile, setImageFile] =
     useState<File | null>(null);
 
-  const [imagePreview, setImagePreview] =
-    useState("");
+  const [imagePreview, setImagePreview] = useState("");
 
   // =========================
   // Messages
   // =========================
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   // =========================
-  // Preview modal
+  // Preview
   // =========================
+
   const [showPreview, setShowPreview] = useState(false);
 
   // =========================
   // Load Blog
   // =========================
+
   useEffect(() => {
     if (!id) {
       setLoading(false);
@@ -96,11 +104,7 @@ const BlogPost = () => {
         setLoading(true);
         setError("");
 
-        const blogRef = doc(
-          db,
-          "blogPosts",
-          id
-        );
+        const blogRef = doc(db, "blogPosts", id);
 
         const blogSnap = await getDoc(blogRef);
 
@@ -116,9 +120,7 @@ const BlogPost = () => {
         setContent(data.content || "");
 
         setImage(data.image || "");
-        setImagePublicId(
-          data.imagePublicId || ""
-        );
+        setImagePublicId(data.imagePublicId || "");
         setImageName(data.imageName || "");
 
         setStatus(
@@ -126,11 +128,12 @@ const BlogPost = () => {
             ? "draft"
             : "published"
         );
-      } catch (error) {
-        console.error(
-          "Blog load error:",
-          error
+
+        setShowOnHome(
+          data.showOnHome === true
         );
+      } catch (error) {
+        console.error("Blog load error:", error);
 
         setError(
           "Blog post load করতে সমস্যা হয়েছে।"
@@ -146,6 +149,7 @@ const BlogPost = () => {
   // =========================
   // Select Image
   // =========================
+
   const handleImageSelect = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -159,9 +163,7 @@ const BlogPost = () => {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError(
-        "Image সর্বোচ্চ 5MB হতে পারবে।"
-      );
+      setError("Image সর্বোচ্চ 5MB হতে পারবে।");
       return;
     }
 
@@ -181,8 +183,9 @@ const BlogPost = () => {
   };
 
   // =========================
-  // Remove New Image
+  // Remove Selected Image
   // =========================
+
   const removeSelectedImage = () => {
     if (imagePreview) {
       URL.revokeObjectURL(imagePreview);
@@ -195,16 +198,15 @@ const BlogPost = () => {
   // =========================
   // Upload Cloudinary
   // =========================
+
   const uploadToCloudinary = async (
     file: File
   ) => {
     const cloudName =
-      import.meta.env
-        .VITE_CLOUDINARY_CLOUD_NAME;
+      import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
     const uploadPreset =
-      import.meta.env
-        .VITE_CLOUDINARY_UPLOAD_PRESET;
+      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName || !uploadPreset) {
       throw new Error(
@@ -245,6 +247,7 @@ const BlogPost = () => {
   // =========================
   // Save Blog
   // =========================
+
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
@@ -253,16 +256,13 @@ const BlogPost = () => {
     setError("");
     setSuccess("");
 
-    // Validation
     if (!title.trim()) {
       setError("Blog title লিখুন।");
       return;
     }
 
     if (!description.trim()) {
-      setError(
-        "Short description লিখুন।"
-      );
+      setError("Short description লিখুন।");
       return;
     }
 
@@ -281,13 +281,12 @@ const BlogPost = () => {
       // =========================
       // Upload New Image
       // =========================
+
       if (imageFile) {
         setUploading(true);
 
         const uploaded =
-          await uploadToCloudinary(
-            imageFile
-          );
+          await uploadToCloudinary(imageFile);
 
         finalImage = uploaded.url;
         finalPublicId =
@@ -299,24 +298,28 @@ const BlogPost = () => {
       }
 
       // =========================
-      // Add New Blog
+      // Add Blog
       // =========================
+
       if (!isEditMode) {
         await addDoc(
           collection(db, "blogPosts"),
           {
             title: title.trim(),
-            description:
-              description.trim(),
+            description: description.trim(),
             content: content.trim(),
 
             image: finalImage,
-            imagePublicId:
-              finalPublicId,
-            imageName:
-              finalImageName,
+            imagePublicId: finalPublicId,
+            imageName: finalImageName,
 
             status,
+
+            // Home visibility
+            showOnHome:
+              status === "published"
+                ? showOnHome
+                : false,
 
             createdAt:
               serverTimestamp(),
@@ -332,28 +335,27 @@ const BlogPost = () => {
       }
 
       // =========================
-      // Update Existing Blog
+      // Update Blog
       // =========================
+
       else {
         await updateDoc(
-          doc(
-            db,
-            "blogPosts",
-            id as string
-          ),
+          doc(db, "blogPosts", id as string),
           {
             title: title.trim(),
-            description:
-              description.trim(),
+            description: description.trim(),
             content: content.trim(),
 
             image: finalImage,
-            imagePublicId:
-              finalPublicId,
-            imageName:
-              finalImageName,
+            imagePublicId: finalPublicId,
+            imageName: finalImageName,
 
             status,
+
+            showOnHome:
+              status === "published"
+                ? showOnHome
+                : false,
 
             updatedAt:
               serverTimestamp(),
@@ -365,17 +367,13 @@ const BlogPost = () => {
         );
       }
 
-      // Cleanup
       if (imagePreview) {
-        URL.revokeObjectURL(
-          imagePreview
-        );
+        URL.revokeObjectURL(imagePreview);
       }
 
       setImageFile(null);
       setImagePreview("");
 
-      // Redirect
       setTimeout(() => {
         navigate("/admin/blogs");
       }, 1000);
@@ -398,14 +396,16 @@ const BlogPost = () => {
   };
 
   // =========================
-  // Preview Image
+  // Display Image
   // =========================
+
   const displayImage =
     imagePreview || image;
 
   // =========================
-  // Loading Screen
+  // Loading
   // =========================
+
   if (loading) {
     return (
       <div
@@ -417,7 +417,7 @@ const BlogPost = () => {
         <div className="text-center">
           <Spinner animation="border" />
 
-          <p className="text-muted mt-3 mb-0">
+          <p className="text-muted mt-3">
             Loading blog...
           </p>
         </div>
@@ -433,10 +433,11 @@ const BlogPost = () => {
       }}
     >
       <Container>
-        {/* =========================
-            Header
-        ========================= */}
+
+        {/* Header */}
+
         <div className="d-flex justify-content-between align-items-center mb-4">
+
           <div>
             <h2 className="fw-bold mb-1">
               {isEditMode
@@ -460,11 +461,11 @@ const BlogPost = () => {
             <FaArrowLeft className="me-2" />
             Back
           </Button>
+
         </div>
 
-        {/* =========================
-            Alerts
-        ========================= */}
+        {/* Alerts */}
+
         {error && (
           <Alert
             variant="danger"
@@ -482,17 +483,21 @@ const BlogPost = () => {
         )}
 
         <Row className="g-4">
-          {/* =========================
-              Editor
-          ========================= */}
+
+          {/* Editor */}
+
           <Col lg={8}>
+
             <Card className="border-0 shadow-sm">
+
               <Card.Body className="p-4">
-                <Form
-                  onSubmit={handleSubmit}
-                >
+
+                <Form onSubmit={handleSubmit}>
+
                   {/* Title */}
+
                   <Form.Group className="mb-4">
+
                     <Form.Label className="fw-semibold">
                       Blog Title
                     </Form.Label>
@@ -501,17 +506,18 @@ const BlogPost = () => {
                       type="text"
                       value={title}
                       onChange={(e) =>
-                        setTitle(
-                          e.target.value
-                        )
+                        setTitle(e.target.value)
                       }
                       placeholder="যেমন: Sprihan-এর প্রথম ভ্রমণ"
                       size="lg"
                     />
+
                   </Form.Group>
 
                   {/* Description */}
+
                   <Form.Group className="mb-4">
+
                     <Form.Label className="fw-semibold">
                       Short Description
                     </Form.Label>
@@ -527,10 +533,13 @@ const BlogPost = () => {
                       }
                       placeholder="Blog সম্পর্কে ছোট একটি description লিখুন..."
                     />
+
                   </Form.Group>
 
                   {/* Content */}
+
                   <Form.Group className="mb-4">
+
                     <Form.Label className="fw-semibold">
                       Blog Content
                     </Form.Label>
@@ -551,13 +560,15 @@ const BlogPost = () => {
                     />
 
                     <Form.Text className="text-muted">
-                      Paragraph আলাদা করতে
-                      Enter ব্যবহার করুন।
+                      Paragraph আলাদা করতে Enter ব্যবহার করুন।
                     </Form.Text>
+
                   </Form.Group>
 
                   {/* Image */}
+
                   <Form.Group className="mb-4">
+
                     <Form.Label className="fw-semibold">
                       Featured Image
                     </Form.Label>
@@ -572,16 +583,20 @@ const BlogPost = () => {
                     />
 
                     <Form.Text className="text-muted">
-                      JPG, PNG অথবা WebP.
-                      Maximum 5MB.
+                      JPG, PNG অথবা WebP. Maximum 5MB.
                     </Form.Text>
+
                   </Form.Group>
 
                   {/* Selected Image */}
+
                   {imagePreview && (
                     <Card className="mb-4 border">
+
                       <Card.Body>
+
                         <div className="d-flex justify-content-between align-items-center mb-2">
+
                           <small className="fw-semibold">
                             New Image
                           </small>
@@ -596,6 +611,7 @@ const BlogPost = () => {
                           >
                             <FaTrash />
                           </Button>
+
                         </div>
 
                         <Image
@@ -605,30 +621,39 @@ const BlogPost = () => {
                           style={{
                             maxHeight: "350px",
                             width: "100%",
-                            objectFit:
-                              "cover",
+                            objectFit: "cover",
                           }}
                         />
+
                       </Card.Body>
+
                     </Card>
                   )}
 
                   {/* Status */}
+
                   <Form.Group className="mb-4">
+
                     <Form.Label className="fw-semibold">
                       Status
                     </Form.Label>
 
                     <Form.Select
                       value={status}
-                      onChange={(e) =>
-                        setStatus(
-                          e.target
-                            .value as
+                      onChange={(e) => {
+                        const value =
+                          e.target.value as
                             | "published"
-                            | "draft"
-                        )
-                      }
+                            | "draft";
+
+                        setStatus(value);
+
+                        if (
+                          value === "draft"
+                        ) {
+                          setShowOnHome(false);
+                        }
+                      }}
                     >
                       <option value="published">
                         Published
@@ -638,10 +663,55 @@ const BlogPost = () => {
                         Draft
                       </option>
                     </Form.Select>
+
                   </Form.Group>
 
+                  {/* Show On Home */}
+
+                  <Card
+                    className="mb-4 border"
+                    style={{
+                      background: "#fafafa",
+                    }}
+                  >
+
+                    <Card.Body>
+
+                      <Form.Check
+                        type="switch"
+                        id="showOnHome"
+                        label={
+                          <span className="fw-semibold">
+                            <FaHome className="me-2" />
+                            Show this blog on Home
+                          </span>
+                        }
+                        checked={showOnHome}
+                        disabled={
+                          status === "draft" ||
+                          saving
+                        }
+                        onChange={(e) =>
+                          setShowOnHome(
+                            e.target.checked
+                          )
+                        }
+                      />
+
+                      <small className="text-muted d-block mt-2">
+                        {status === "draft"
+                          ? "Draft blog Home page-এ দেখানো যাবে না।"
+                          : "ON করলে এই blog Home page-এর Blog section-এ দেখা যাবে।"}
+                      </small>
+
+                    </Card.Body>
+
+                  </Card>
+
                   {/* Buttons */}
+
                   <div className="d-flex justify-content-end gap-2">
+
                     <Button
                       type="button"
                       variant="outline-secondary"
@@ -693,33 +763,41 @@ const BlogPost = () => {
                         </>
                       )}
                     </Button>
+
                   </div>
+
                 </Form>
+
               </Card.Body>
+
             </Card>
+
           </Col>
 
-          {/* =========================
-              Side Preview
-          ========================= */}
+          {/* Side Preview */}
+
           <Col lg={4}>
+
             <Card className="border-0 shadow-sm">
+
               <Card.Body className="p-4">
+
                 <div className="d-flex justify-content-between align-items-center mb-3">
+
                   <h5 className="fw-bold mb-0">
                     Blog Preview
                   </h5>
 
                   <Badge
                     bg={
-                      status ===
-                      "published"
+                      status === "published"
                         ? "success"
                         : "secondary"
                     }
                   >
                     {status}
                   </Badge>
+
                 </div>
 
                 {displayImage ? (
@@ -736,16 +814,12 @@ const BlogPost = () => {
                     className="rounded d-flex align-items-center justify-content-center mb-3"
                     style={{
                       height: "220px",
-                      background:
-                        "#f1f3f5",
+                      background: "#f1f3f5",
                       color: "#999",
                     }}
                   >
                     <div className="text-center">
-                      <FaImage
-                        size={45}
-                      />
-
+                      <FaImage size={45} />
                       <div className="mt-2">
                         No image
                       </div>
@@ -754,8 +828,7 @@ const BlogPost = () => {
                 )}
 
                 <h4 className="fw-bold">
-                  {title ||
-                    "Blog Title"}
+                  {title || "Blog Title"}
                 </h4>
 
                 <p className="text-muted">
@@ -767,23 +840,26 @@ const BlogPost = () => {
 
                 <div
                   style={{
-                    whiteSpace:
-                      "pre-wrap",
+                    whiteSpace: "pre-wrap",
                     lineHeight: 1.8,
                   }}
                 >
                   {content ||
                     "Blog content will appear here..."}
                 </div>
+
               </Card.Body>
+
             </Card>
+
           </Col>
+
         </Row>
+
       </Container>
 
-      {/* =========================
-          Preview Modal
-      ========================= */}
+      {/* Preview Modal */}
+
       <Modal
         show={showPreview}
         onHide={() =>
@@ -792,6 +868,7 @@ const BlogPost = () => {
         size="lg"
         centered
       >
+
         <Modal.Header closeButton>
           <Modal.Title className="fw-bold">
             Blog Preview
@@ -799,6 +876,7 @@ const BlogPost = () => {
         </Modal.Header>
 
         <Modal.Body>
+
           {displayImage && (
             <Image
               src={displayImage}
@@ -811,6 +889,7 @@ const BlogPost = () => {
           )}
 
           <div className="mb-2">
+
             <Badge
               bg={
                 status === "published"
@@ -820,11 +899,22 @@ const BlogPost = () => {
             >
               {status}
             </Badge>
+
+            {showOnHome &&
+              status === "published" && (
+                <Badge
+                  bg="primary"
+                  className="ms-2"
+                >
+                  <FaHome className="me-1" />
+                  Home
+                </Badge>
+              )}
+
           </div>
 
           <h1 className="fw-bold mb-3">
-            {title ||
-              "Blog Title"}
+            {title || "Blog Title"}
           </h1>
 
           <p className="lead text-muted">
@@ -836,18 +926,18 @@ const BlogPost = () => {
 
           <div
             style={{
-              whiteSpace:
-                "pre-wrap",
+              whiteSpace: "pre-wrap",
               lineHeight: 1.9,
               fontSize: "17px",
             }}
           >
-            {content ||
-              "Blog content..."}
+            {content || "Blog content..."}
           </div>
+
         </Modal.Body>
 
         <Modal.Footer>
+
           <Button
             variant="dark"
             onClick={() =>
@@ -856,8 +946,11 @@ const BlogPost = () => {
           >
             Close Preview
           </Button>
+
         </Modal.Footer>
+
       </Modal>
+
     </div>
   );
 };

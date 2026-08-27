@@ -48,6 +48,7 @@ const Dashboard = () => {
 
   const [loading, setLoading] = useState(true);
   const [blogCount, setBlogCount] = useState(0);
+  const [familyMemberCount, setFamilyMemberCount] = useState(0);
 
   const [counts, setCounts] = useState({
     prescription: 0,
@@ -136,6 +137,10 @@ const Dashboard = () => {
         const documentSnapshot = await getDocs(collection(db, "documents"));
 
         setDocumentCount(documentSnapshot.size);
+
+        const familySnapshot = await getDocs(collection(db, "familyMembers"));
+
+        setFamilyMemberCount(familySnapshot.size);
 
         memorySnapshot.docs.forEach((item) => {
           const data = item.data();
@@ -462,7 +467,7 @@ const Dashboard = () => {
             Overview
         ========================== */}
         <Row className="g-4 mb-5">
-          <Col xs={6} md={4}>
+          <Col xs={6} md={3}>
             <Card
               className="dashboard-stat-card h-100"
               style={{ cursor: "pointer" }}
@@ -490,7 +495,7 @@ const Dashboard = () => {
             </Card>
           </Col>
 
-          <Col xs={6} md={4}>
+          <Col xs={6} md={3}>
             <Card
               className="dashboard-stat-card h-100"
               style={{ cursor: "pointer" }}
@@ -525,7 +530,7 @@ const Dashboard = () => {
             </Card>
           </Col>
 
-          <Col xs={6} md={4}>
+          <Col xs={6} md={3}>
             <Card
               className="dashboard-stat-card h-100"
               style={{ cursor: "pointer" }}
@@ -559,6 +564,41 @@ const Dashboard = () => {
               </Card.Body>
             </Card>
           </Col>
+
+          <Col xs={6} md={3}>
+            <Card
+              className="dashboard-stat-card h-100"
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate("/admin/family-members")}
+            >
+              <Card.Body className="p-4">
+                <div className="d-flex align-items-center">
+                  <div
+                    className="rounded-3 bg-success text-white d-flex align-items-center justify-content-center me-3"
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      fontSize: "26px",
+                    }}
+                  >
+                    👨‍👩‍👦
+                  </div>
+
+                  <div>
+                    <div className="dashboard-stat-label">Family Members</div>
+
+                    <h2 className="dashboard-stat-number">
+                      {loading ? (
+                        <Spinner animation="border" size="sm" />
+                      ) : (
+                        familyMemberCount
+                      )}
+                    </h2>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
         </Row>
 
         {/* =========================
@@ -566,8 +606,6 @@ const Dashboard = () => {
         ========================== */}
         <div className="mb-4">
           <h4 className="fw-bold mb-1">Memories by Category</h4>
-
-          
         </div>
 
         <Row className="g-4">
@@ -642,8 +680,6 @@ const Dashboard = () => {
               </Button>
             </Col>
 
-           
-
             <Col xs={6} md={3}>
               <Button
                 variant="primary"
@@ -676,6 +712,8 @@ const Dashboard = () => {
                 Register User
               </Button>
             </Col>
+
+            
           </Row>
         </div>
 

@@ -1,25 +1,60 @@
-import { Container, Nav, Navbar as BootstrapNavbar } from "react-bootstrap";
+import {
+  Container,
+  Nav,
+  Navbar as BootstrapNavbar,
+} from "react-bootstrap";
+
 import { FaHeart } from "react-icons/fa";
+
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   return (
-    <BootstrapNavbar expand="lg" className="main-navbar" sticky="top">
+    <BootstrapNavbar
+      expand="lg"
+      className="main-navbar"
+      sticky="top"
+    >
       <Container>
-        <BootstrapNavbar.Brand href="/" className="brand">
+
+        {/* Logo */}
+        <BootstrapNavbar.Brand
+          as={Link}
+          to="/"
+          className="brand"
+        >
           <FaHeart className="brand-icon" />
           Sprihan Halder
         </BootstrapNavbar.Brand>
 
-        <BootstrapNavbar.Toggle aria-controls="main-navbar" />
+        {/* Mobile Toggle */}
+        <BootstrapNavbar.Toggle
+          aria-controls="main-navbar"
+        />
 
+        {/* Menu */}
         <BootstrapNavbar.Collapse id="main-navbar">
           <Nav className="ms-auto">
-            <Nav.Link href="/">Home</Nav.Link>
-            <Nav.Link href="#about">About</Nav.Link>
-            <Nav.Link href="#memories">Memories</Nav.Link>
-            <Nav.Link href="#milestones">Milestones</Nav.Link>
+
+            <Nav.Link as={Link} to="/">
+              Home
+            </Nav.Link>
+
+            <Nav.Link as={Link} to="/#family">
+              Family
+            </Nav.Link>
+
+            <Nav.Link as={Link} to="/memories">
+              Memories
+            </Nav.Link>
+
+            <Nav.Link as={Link} to="/blogs">
+              Blogs
+            </Nav.Link>
+
           </Nav>
         </BootstrapNavbar.Collapse>
+
       </Container>
     </BootstrapNavbar>
   );

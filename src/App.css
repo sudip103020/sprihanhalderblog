@@ -1178,3 +1178,239 @@
     max-width: 50%;
   }
 }
+
+.admin-footer {
+  text-align: center;
+  padding: 10px 15px;
+  font-size: 13px;
+  color: #6c757d;
+  border-top: 1px solid #eee;
+  background: #fff;
+}
+
+.hero-info-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.hero-info-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.hero-info-box > svg {
+  font-size: 20px;
+}
+
+.hero-info-box div {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.hero-info-box small {
+  color: #888;
+  font-size: 11px;
+}
+
+.hero-info-box strong {
+  font-size: 14px;
+}
+
+.hero-scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 25px;
+  color: #666;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.hero-scroll:hover {
+  color: #000;
+}
+
+@media (max-width: 991px) {
+  .hero-image-wrapper {
+    margin-top: 40px;
+  }
+
+  .hero-info-wrapper {
+    justify-content: center;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-scroll {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-info-box {
+    padding: 8px 12px;
+  }
+
+  .hero-info-box strong {
+    font-size: 12px;
+  }
+
+  .hero-info-box small {
+    font-size: 10px;
+  }
+}
+
+/* =========================================
+   Family Section
+========================================= */
+
+.family-section {
+  padding: 80px 0;
+  background: #fff;
+}
+
+/* =========================================
+   Family Card
+========================================= */
+
+.family-card {
+  overflow: hidden;
+  border-radius: 18px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.family-card:hover {
+  transform: translateY(-6px);
+}
+
+/* =========================================
+   Family Photo
+========================================= */
+
+.family-photo-box {
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.family-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.family-card:hover .family-photo {
+  transform: scale(1.05);
+}
+
+/* =========================================
+   No Photo
+========================================= */
+
+.family-photo-placeholder {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #aaa;
+  font-size: 55px;
+}
+
+/* =========================================
+   Relation
+========================================= */
+
+.family-relation {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: 20px;
+}
+
+/* =========================================
+   Name
+========================================= */
+
+.family-name {
+  font-size: 1.1rem;
+}
+
+/* =========================================
+   Description
+========================================= */
+
+.family-description {
+  line-height: 1.6;
+}
+
+/* =========================================
+   Mobile
+========================================= */
+
+@media (max-width: 576px) {
+  .family-section {
+    padding: 60px 0;
+  }
+
+  .family-photo-box {
+    height: 280px;
+  }
+
+  .family-card {
+    max-width: 340px;
+    margin: 0 auto;
+  }
+}
+
+/* =========================================================
+   MEMORY READ MORE
+========================================================= */
+
+.memory-read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 8px 15px;
+  border: 1px solid #e75480;
+  border-radius: 25px;
+  color: #e75480;
+  background: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.memory-read-more:hover {
+  color: #fff;
+  background: #e75480;
+  border-color: #e75480;
+  transform: translateX(3px);
+}
+
+.memory-read-more svg {
+  font-size: 12px;
+}
+
+@media (max-width: 576px) {
+  .memory-read-more {
+    font-size: 13px;
+    padding: 7px 13px;
+  }
+}

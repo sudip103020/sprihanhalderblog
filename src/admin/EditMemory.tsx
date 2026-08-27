@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   Container,
   Card,
@@ -12,6 +13,7 @@ import {
   Badge,
   ProgressBar,
 } from "react-bootstrap";
+
 import {
   FaArrowLeft,
   FaSave,
@@ -20,14 +22,21 @@ import {
   FaLock,
   FaVideo,
   FaImage,
+  FaHome,
 } from "react-icons/fa";
-import { useNavigate, useParams } from "react-router-dom";
+
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
 import {
   doc,
   getDoc,
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+
 import { db } from "../firebase/config";
 
 interface MemoryMedia {
@@ -47,6 +56,7 @@ interface NewMedia {
 
 const EditMemory = () => {
   const { id } = useParams();
+
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -57,20 +67,27 @@ const EditMemory = () => {
   const [description, setDescription] = useState("");
   const [comment, setComment] = useState("");
 
+  // ⭐ Show on Home
+  const [showOnHome, setShowOnHome] = useState(false);
+
   const [existingMedia, setExistingMedia] =
     useState<MemoryMedia[]>([]);
 
-  const [newMedia, setNewMedia] = useState<NewMedia[]>(
-    []
-  );
+  const [newMedia, setNewMedia] =
+    useState<NewMedia[]>([]);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   const [progress, setProgress] = useState(0);
 
+  // =====================================================
   // Load Memory
+  // =====================================================
+
   useEffect(() => {
     const loadMemory = async () => {
+
       if (!id) {
         setError("Memory ID পাওয়া যায়নি।");
         setLoading(false);
@@ -78,8 +95,12 @@ const EditMemory = () => {
       }
 
       try {
-        const memoryRef = doc(db, "memories", id);
-        const memorySnap = await getDoc(memoryRef);
+
+        const memoryRef =
+          doc(db, "memories", id);
+
+        const memorySnap =
+          await getDoc(memoryRef);
 
         if (!memorySnap.exists()) {
           setError("Memory পাওয়া যায়নি।");
@@ -91,131 +112,218 @@ const EditMemory = () => {
 
         setDate(data.date || "");
         setType(data.type || "");
-        setDescription(data.description || "");
+        setDescription(
+          data.description || ""
+        );
         setComment(data.comment || "");
 
-        // New media structure
+        // ⭐ Load Show On Home
+        setShowOnHome(
+          data.showOnHome === true
+        );
+
+        // =================================================
+        // New Media Structure
+        // =================================================
+
         if (
           Array.isArray(data.media) &&
           data.media.length > 0
         ) {
-          setExistingMedia(data.media);
+
+          setExistingMedia(
+            data.media.map(
+              (item: MemoryMedia) => ({
+                ...item,
+                mediaType:
+                  item.mediaType || "image",
+              })
+            )
+          );
+
         } else {
-          // Old images structure support
+
+          // Old images structure
+
           const oldImages =
             Array.isArray(data.images)
-              ? data.images.map((image: any) => ({
-                  ...image,
-                  mediaType: "image",
-                }))
+              ? data.images.map(
+                  (image: any) => ({
+                    ...image,
+                    mediaType: "image",
+                  })
+                )
               : [];
 
           setExistingMedia(oldImages);
         }
+
       } catch (error) {
-        console.error("Load memory error:", error);
-        setError("Memory load করতে সমস্যা হয়েছে।");
+
+        console.error(
+          "Load memory error:",
+          error
+        );
+
+        setError(
+          "Memory load করতে সমস্যা হয়েছে।"
+        );
+
       } finally {
+
         setLoading(false);
+
       }
     };
 
     loadMemory();
+
   }, [id]);
 
-  // Existing media visibility
+  // =====================================================
+  // Existing Media Visibility
+  // =====================================================
+
   const changeExistingVisibility = (
     index: number,
     visibility: "public" | "private"
   ) => {
+
     setExistingMedia((prev) =>
       prev.map((item, i) =>
         i === index
-          ? { ...item, visibility }
+          ? {
+              ...item,
+              visibility,
+            }
           : item
       )
     );
   };
 
-  // Remove existing media
-  const removeExistingMedia = (index: number) => {
-    const confirmDelete = window.confirm(
-      "এই media-টি Memory থেকে remove করতে চান?"
-    );
+  // =====================================================
+  // Remove Existing Media
+  // =====================================================
+
+  const removeExistingMedia = (
+    index: number
+  ) => {
+
+    const confirmDelete =
+      window.confirm(
+        "এই media-টি Memory থেকে remove করতে চান?"
+      );
 
     if (!confirmDelete) return;
 
     setExistingMedia((prev) =>
-      prev.filter((_, i) => i !== index)
+      prev.filter(
+        (_, i) => i !== index
+      )
     );
   };
 
-  // Select new image/video
+  // =====================================================
+  // Select New Image / Video
+  // =====================================================
+
   const handleNewMedia = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+
     const files = event.target.files;
 
     if (!files) return;
 
-    const selected = Array.from(files);
+    const selected =
+      Array.from(files);
 
-    const items: NewMedia[] = selected
-      .filter(
-        (file) =>
-          file.type.startsWith("image/") ||
-          file.type.startsWith("video/")
-      )
-      .map((file) => ({
-        file,
-        preview: URL.createObjectURL(file),
-        visibility: "public",
-        mediaType: file.type.startsWith("video/")
-          ? "video"
-          : "image",
-      }));
+    const items: NewMedia[] =
+      selected
+        .filter(
+          (file) =>
+            file.type.startsWith("image/") ||
+            file.type.startsWith("video/")
+        )
+        .map((file) => ({
+          file,
+          preview:
+            URL.createObjectURL(file),
+          visibility: "public",
+          mediaType:
+            file.type.startsWith("video/")
+              ? "video"
+              : "image",
+        }));
 
-    setNewMedia((prev) => [...prev, ...items]);
+    setNewMedia((prev) => [
+      ...prev,
+      ...items,
+    ]);
 
     event.target.value = "";
   };
 
-  // Remove new media
-  const removeNewMedia = (index: number) => {
+  // =====================================================
+  // Remove New Media
+  // =====================================================
+
+  const removeNewMedia = (
+    index: number
+  ) => {
+
     setNewMedia((prev) => {
+
       const item = prev[index];
 
       if (item) {
-        URL.revokeObjectURL(item.preview);
+        URL.revokeObjectURL(
+          item.preview
+        );
       }
 
-      return prev.filter((_, i) => i !== index);
+      return prev.filter(
+        (_, i) => i !== index
+      );
     });
   };
 
-  // New media visibility
+  // =====================================================
+  // New Media Visibility
+  // =====================================================
+
   const changeNewVisibility = (
     index: number,
     visibility: "public" | "private"
   ) => {
+
     setNewMedia((prev) =>
       prev.map((item, i) =>
         i === index
-          ? { ...item, visibility }
+          ? {
+              ...item,
+              visibility,
+            }
           : item
       )
     );
   };
 
-  // Upload to Cloudinary
+  // =====================================================
+  // Upload Cloudinary
+  // =====================================================
+
   const uploadToCloudinary = async (
     item: NewMedia
   ): Promise<MemoryMedia> => {
+
     const cloudName =
-      import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      import.meta.env
+        .VITE_CLOUDINARY_CLOUD_NAME;
 
     const uploadPreset =
-      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      import.meta.env
+        .VITE_CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName || !uploadPreset) {
       throw new Error(
@@ -228,18 +336,27 @@ const EditMemory = () => {
         ? "video"
         : "image";
 
-    const formData = new FormData();
+    const formData =
+      new FormData();
 
-    formData.append("file", item.file);
-    formData.append("upload_preset", uploadPreset);
-
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
-      {
-        method: "POST",
-        body: formData,
-      }
+    formData.append(
+      "file",
+      item.file
     );
+
+    formData.append(
+      "upload_preset",
+      uploadPreset
+    );
+
+    const response =
+      await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -247,25 +364,34 @@ const EditMemory = () => {
       );
     }
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     return {
       url: data.secure_url,
       publicId: data.public_id,
-      visibility: item.visibility,
+      visibility:
+        item.visibility,
       name: item.file.name,
-      mediaType: item.mediaType,
+      mediaType:
+        item.mediaType,
     };
   };
 
+  // =====================================================
   // Update Memory
+  // =====================================================
+
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
+
     event.preventDefault();
 
     if (!id) {
-      setError("Memory ID পাওয়া যায়নি।");
+      setError(
+        "Memory ID পাওয়া যায়নি।"
+      );
       return;
     }
 
@@ -273,12 +399,16 @@ const EditMemory = () => {
     setSuccess("");
 
     if (!date) {
-      setError("তারিখ নির্বাচন করুন।");
+      setError(
+        "তারিখ নির্বাচন করুন।"
+      );
       return;
     }
 
     if (!type) {
-      setError("Memory type নির্বাচন করুন।");
+      setError(
+        "Memory type নির্বাচন করুন।"
+      );
       return;
     }
 
@@ -293,91 +423,167 @@ const EditMemory = () => {
     }
 
     try {
+
       setSaving(true);
       setProgress(0);
 
-      const uploadedMedia: MemoryMedia[] = [];
+      const uploadedMedia:
+        MemoryMedia[] = [];
 
-      for (let i = 0; i < newMedia.length; i++) {
+      // =================================================
+      // Upload New Media
+      // =================================================
+
+      for (
+        let i = 0;
+        i < newMedia.length;
+        i++
+      ) {
+
         const uploaded =
-          await uploadToCloudinary(newMedia[i]);
+          await uploadToCloudinary(
+            newMedia[i]
+          );
 
-        uploadedMedia.push(uploaded);
-
-        const currentProgress = Math.round(
-          ((i + 1) / newMedia.length) * 100
+        uploadedMedia.push(
+          uploaded
         );
 
-        setProgress(currentProgress);
+        const currentProgress =
+          Math.round(
+            ((i + 1) /
+              newMedia.length) *
+              100
+          );
+
+        setProgress(
+          currentProgress
+        );
       }
+
+      // =================================================
+      // Final Media
+      // =================================================
 
       const finalMedia = [
         ...existingMedia,
         ...uploadedMedia,
       ];
 
-      await updateDoc(doc(db, "memories", id), {
-        date,
-        type,
-        description: description.trim(),
-        comment: comment.trim(),
+      // =================================================
+      // Update Firestore
+      // =================================================
 
-        media: finalMedia,
+      await updateDoc(
+        doc(db, "memories", id),
+        {
+          date,
+          type,
+          description:
+            description.trim(),
+          comment:
+            comment.trim(),
 
-        // Compatibility
-        images: finalMedia.filter(
-          (item) => item.mediaType === "image"
-        ),
+          // ⭐ Home Page Control
+          showOnHome,
 
-        updatedAt: serverTimestamp(),
-      });
+          media: finalMedia,
 
-      setSuccess("Memory সফলভাবে update হয়েছে।");
+          // Compatibility
+          images:
+            finalMedia.filter(
+              (item) =>
+                item.mediaType ===
+                "image"
+            ),
 
-      newMedia.forEach((item) => {
-        URL.revokeObjectURL(item.preview);
-      });
+          updatedAt:
+            serverTimestamp(),
+        }
+      );
+
+      setSuccess(
+        showOnHome
+          ? "Memory update হয়েছে এবং Home page-এ দেখানো হবে।"
+          : "Memory সফলভাবে update হয়েছে।"
+      );
+
+      // Revoke previews
+      newMedia.forEach(
+        (item) => {
+          URL.revokeObjectURL(
+            item.preview
+          );
+        }
+      );
 
       setNewMedia([]);
 
+      // Redirect
       setTimeout(() => {
-        navigate("/admin/memories");
-      }, 1000);
+        navigate(
+          "/admin/memories"
+        );
+      }, 1200);
+
     } catch (error) {
-      console.error("Update memory error:", error);
+
+      console.error(
+        "Update memory error:",
+        error
+      );
 
       setError(
         error instanceof Error
           ? error.message
           : "Memory update করতে সমস্যা হয়েছে।"
       );
+
     } finally {
+
       setSaving(false);
+
     }
   };
 
-
+  // =====================================================
+  // Loading
+  // =====================================================
 
   if (loading) {
+
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+
         <div className="text-center">
+
           <Spinner animation="border" />
 
           <p className="text-muted mt-3 mb-0">
             Loading memory...
           </p>
+
         </div>
+
       </div>
     );
   }
 
+  // =====================================================
+  // UI
+  // =====================================================
+
   return (
     <div className="min-vh-100 bg-light py-4">
+
       <Container>
+
         {/* Header */}
+
         <div className="d-flex justify-content-between align-items-center mb-4">
+
           <div>
+
             <h2 className="fw-bold mb-1">
               Edit Memory
             </h2>
@@ -385,28 +591,38 @@ const EditMemory = () => {
             <p className="text-muted mb-0">
               Update memory information and media
             </p>
+
           </div>
 
           <Button
             variant="outline-dark"
             onClick={() =>
-              navigate("/admin/memories")
+              navigate(
+                "/admin/memories"
+              )
             }
           >
             <FaArrowLeft className="me-2" />
             Back
           </Button>
+
         </div>
+
+        {/* Error */}
 
         {error && (
           <Alert
             variant="danger"
             dismissible
-            onClose={() => setError("")}
+            onClose={() =>
+              setError("")
+            }
           >
             {error}
           </Alert>
         )}
+
+        {/* Success */}
 
         {success && (
           <Alert variant="success">
@@ -415,47 +631,74 @@ const EditMemory = () => {
         )}
 
         <Card className="border-0 shadow-sm">
+
           <Card.Body className="p-4">
+
             <Form onSubmit={handleSubmit}>
+
               <Row className="g-4">
-                {/* Date */}
+
+                {/* =========================
+                    Date
+                ========================== */}
+
                 <Col md={6}>
+
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
+
                       Date{" "}
+
                       <span className="text-danger">
                         *
                       </span>
+
                     </Form.Label>
 
                     <Form.Control
                       type="date"
                       value={date}
                       onChange={(e) =>
-                        setDate(e.target.value)
+                        setDate(
+                          e.target.value
+                        )
                       }
                       required
                     />
+
                   </Form.Group>
+
                 </Col>
 
-                {/* Type */}
+                {/* =========================
+                    Type
+                ========================== */}
+
                 <Col md={6}>
+
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
+
                       Type{" "}
+
                       <span className="text-danger">
                         *
                       </span>
+
                     </Form.Label>
 
                     <Form.Select
                       value={type}
                       onChange={(e) =>
-                        setType(e.target.value)
+                        setType(
+                          e.target.value
+                        )
                       }
                       required
                     >
+
                       <option value="">
                         Select Memory Type
                       </option>
@@ -483,13 +726,21 @@ const EditMemory = () => {
                       <option value="other">
                         📌 Other
                       </option>
+
                     </Form.Select>
+
                   </Form.Group>
+
                 </Col>
 
-                {/* Description */}
+                {/* =========================
+                    Description
+                ========================== */}
+
                 <Col xs={12}>
+
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
                       Description
                     </Form.Label>
@@ -499,16 +750,25 @@ const EditMemory = () => {
                       rows={4}
                       value={description}
                       onChange={(e) =>
-                        setDescription(e.target.value)
+                        setDescription(
+                          e.target.value
+                        )
                       }
                       placeholder="Write something about this memory..."
                     />
+
                   </Form.Group>
+
                 </Col>
 
-                {/* Existing Media */}
+                {/* =========================
+                    Existing Media
+                ========================== */}
+
                 <Col xs={12}>
+
                   <div className="d-flex justify-content-between align-items-center mb-3">
+
                     <h5 className="fw-bold mb-0">
                       Existing Media
                     </h5>
@@ -516,16 +776,22 @@ const EditMemory = () => {
                     <Badge bg="secondary">
                       {existingMedia.length} Items
                     </Badge>
+
                   </div>
 
                   {existingMedia.length === 0 ? (
+
                     <Alert variant="light">
                       কোনো existing media নেই।
                     </Alert>
+
                   ) : (
+
                     <Row className="g-3">
+
                       {existingMedia.map(
                         (item, index) => (
+
                           <Col
                             xs={12}
                             sm={6}
@@ -533,37 +799,56 @@ const EditMemory = () => {
                             lg={3}
                             key={`${item.publicId}-${index}`}
                           >
+
                             <Card className="border shadow-sm h-100">
+
                               <div
                                 style={{
-                                  height: "190px",
-                                  overflow: "hidden",
-                                  background: "#111",
+                                  height:
+                                    "190px",
+                                  overflow:
+                                    "hidden",
+                                  background:
+                                    "#111",
                                 }}
                               >
+
                                 {item.mediaType ===
                                 "video" ? (
+
                                   <video
-                                    src={item.url}
+                                    src={
+                                      item.url
+                                    }
                                     className="w-100 h-100"
                                     style={{
-                                      objectFit: "cover",
+                                      objectFit:
+                                        "cover",
                                     }}
                                     controls
                                   />
+
                                 ) : (
+
                                   <Image
-                                    src={item.url}
+                                    src={
+                                      item.url
+                                    }
                                     className="w-100 h-100"
                                     style={{
-                                      objectFit: "cover",
+                                      objectFit:
+                                        "cover",
                                     }}
                                   />
+
                                 )}
+
                               </div>
 
                               <Card.Body className="p-3">
+
                                 <div className="mb-2">
+
                                   <Badge
                                     bg={
                                       item.mediaType ===
@@ -572,6 +857,7 @@ const EditMemory = () => {
                                         : "secondary"
                                     }
                                   >
+
                                     {item.mediaType ===
                                     "video" ? (
                                       <>
@@ -584,7 +870,9 @@ const EditMemory = () => {
                                         Image
                                       </>
                                     )}
+
                                   </Badge>
+
                                 </div>
 
                                 <div className="small text-truncate mb-2">
@@ -592,6 +880,7 @@ const EditMemory = () => {
                                 </div>
 
                                 <div className="d-flex gap-2 mb-3">
+
                                   <Button
                                     type="button"
                                     size="sm"
@@ -608,8 +897,10 @@ const EditMemory = () => {
                                       )
                                     }
                                   >
+
                                     <FaGlobe className="me-1" />
                                     Public
+
                                   </Button>
 
                                   <Button
@@ -628,9 +919,12 @@ const EditMemory = () => {
                                       )
                                     }
                                   >
+
                                     <FaLock className="me-1" />
                                     Private
+
                                   </Button>
+
                                 </div>
 
                                 <Button
@@ -644,21 +938,35 @@ const EditMemory = () => {
                                     )
                                   }
                                 >
+
                                   <FaTrash className="me-1" />
                                   Remove
+
                                 </Button>
+
                               </Card.Body>
+
                             </Card>
+
                           </Col>
+
                         )
                       )}
+
                     </Row>
+
                   )}
+
                 </Col>
 
-                {/* Add New Media */}
+                {/* =========================
+                    Add New Media
+                ========================== */}
+
                 <Col xs={12}>
+
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
                       Add New Photos & Videos
                     </Form.Label>
@@ -667,147 +975,244 @@ const EditMemory = () => {
                       type="file"
                       accept="image/*,video/*"
                       multiple
-                      onChange={handleNewMedia}
+                      onChange={
+                        handleNewMedia
+                      }
                     />
 
                     <Form.Text className="text-muted">
                       নতুন ছবি এবং ভিডিও যোগ করতে
                       পারবেন।
                     </Form.Text>
+
                   </Form.Group>
+
                 </Col>
 
-                {/* New Media */}
+                {/* =========================
+                    New Media
+                ========================== */}
+
                 {newMedia.length > 0 && (
+
                   <Col xs={12}>
+
                     <h6 className="fw-bold mb-3">
-                      New Media ({newMedia.length})
+                      New Media (
+                      {newMedia.length})
                     </h6>
 
                     <Row className="g-3">
-                      {newMedia.map((item, index) => (
-                        <Col
-                          xs={12}
-                          sm={6}
-                          md={4}
-                          lg={3}
-                          key={`${item.file.name}-${index}`}
-                        >
-                          <Card className="border shadow-sm h-100">
-                            <div
-                              style={{
-                                height: "190px",
-                                overflow: "hidden",
-                                background: "#111",
-                              }}
-                            >
-                              {item.mediaType ===
-                              "video" ? (
-                                <video
-                                  src={item.preview}
-                                  className="w-100 h-100"
-                                  style={{
-                                    objectFit: "cover",
-                                  }}
-                                  controls
-                                />
-                              ) : (
-                                <Image
-                                  src={item.preview}
-                                  className="w-100 h-100"
-                                  style={{
-                                    objectFit: "cover",
-                                  }}
-                                />
-                              )}
-                            </div>
 
-                            <Card.Body className="p-3">
-                              <div className="mb-2">
-                                <Badge
-                                  bg={
-                                    item.mediaType ===
-                                    "video"
-                                      ? "primary"
-                                      : "secondary"
-                                  }
-                                >
-                                  {item.mediaType ===
-                                  "video"
-                                    ? "Video"
-                                    : "Image"}
-                                </Badge>
-                              </div>
+                      {newMedia.map(
+                        (item, index) => (
 
-                              <div className="small text-truncate mb-2">
-                                {item.file.name}
-                              </div>
+                          <Col
+                            xs={12}
+                            sm={6}
+                            md={4}
+                            lg={3}
+                            key={`${item.file.name}-${index}`}
+                          >
 
-                              <div className="d-flex gap-2 mb-3">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant={
-                                    item.visibility ===
-                                    "public"
-                                      ? "success"
-                                      : "outline-success"
-                                  }
-                                  onClick={() =>
-                                    changeNewVisibility(
-                                      index,
-                                      "public"
-                                    )
-                                  }
-                                >
-                                  <FaGlobe className="me-1" />
-                                  Public
-                                </Button>
+                            <Card className="border shadow-sm h-100">
 
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant={
-                                    item.visibility ===
-                                    "private"
-                                      ? "dark"
-                                      : "outline-dark"
-                                  }
-                                  onClick={() =>
-                                    changeNewVisibility(
-                                      index,
-                                      "private"
-                                    )
-                                  }
-                                >
-                                  <FaLock className="me-1" />
-                                  Private
-                                </Button>
-                              </div>
-
-                              <Button
-                                type="button"
-                                variant="outline-danger"
-                                size="sm"
-                                className="w-100"
-                                onClick={() =>
-                                  removeNewMedia(index)
-                                }
+                              <div
+                                style={{
+                                  height:
+                                    "190px",
+                                  overflow:
+                                    "hidden",
+                                  background:
+                                    "#111",
+                                }}
                               >
-                                <FaTrash className="me-1" />
-                                Remove
-                              </Button>
-                            </Card.Body>
-                          </Card>
-                        </Col>
-                      ))}
+
+                                {item.mediaType ===
+                                "video" ? (
+
+                                  <video
+                                    src={
+                                      item.preview
+                                    }
+                                    className="w-100 h-100"
+                                    style={{
+                                      objectFit:
+                                        "cover",
+                                    }}
+                                    controls
+                                  />
+
+                                ) : (
+
+                                  <Image
+                                    src={
+                                      item.preview
+                                    }
+                                    className="w-100 h-100"
+                                    style={{
+                                      objectFit:
+                                        "cover",
+                                    }}
+                                  />
+
+                                )}
+
+                              </div>
+
+                              <Card.Body className="p-3">
+
+                                <div className="mb-2">
+
+                                  <Badge
+                                    bg={
+                                      item.mediaType ===
+                                      "video"
+                                        ? "primary"
+                                        : "secondary"
+                                    }
+                                  >
+                                    {item.mediaType ===
+                                    "video"
+                                      ? "Video"
+                                      : "Image"}
+                                  </Badge>
+
+                                </div>
+
+                                <div className="small text-truncate mb-2">
+                                  {item.file.name}
+                                </div>
+
+                                <div className="d-flex gap-2 mb-3">
+
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                      item.visibility ===
+                                      "public"
+                                        ? "success"
+                                        : "outline-success"
+                                    }
+                                    onClick={() =>
+                                      changeNewVisibility(
+                                        index,
+                                        "public"
+                                      )
+                                    }
+                                  >
+
+                                    <FaGlobe className="me-1" />
+                                    Public
+
+                                  </Button>
+
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                      item.visibility ===
+                                      "private"
+                                        ? "dark"
+                                        : "outline-dark"
+                                    }
+                                    onClick={() =>
+                                      changeNewVisibility(
+                                        index,
+                                        "private"
+                                      )
+                                    }
+                                  >
+
+                                    <FaLock className="me-1" />
+                                    Private
+
+                                  </Button>
+
+                                </div>
+
+                                <Button
+                                  type="button"
+                                  variant="outline-danger"
+                                  size="sm"
+                                  className="w-100"
+                                  onClick={() =>
+                                    removeNewMedia(
+                                      index
+                                    )
+                                  }
+                                >
+
+                                  <FaTrash className="me-1" />
+                                  Remove
+
+                                </Button>
+
+                              </Card.Body>
+
+                            </Card>
+
+                          </Col>
+
+                        )
+                      )}
+
                     </Row>
+
                   </Col>
+
                 )}
 
-                {/* Comment */}
+                {/* =========================
+                    Show On Home
+                ========================== */}
+
                 <Col xs={12}>
+
+                  <Card className="border bg-light">
+
+                    <Card.Body>
+
+                      <Form.Check
+                        type="switch"
+                        id="edit-show-on-home"
+                        checked={showOnHome}
+                        onChange={(e) =>
+                          setShowOnHome(
+                            e.target.checked
+                          )
+                        }
+                        label={
+                          <span className="fw-semibold">
+
+                            <FaHome className="me-2" />
+
+                            Show this Memory on Home page
+
+                          </span>
+                        }
+                      />
+
+                      <Form.Text className="text-muted ms-4">
+                        চালু করলে এই Memory Home page-এর
+                        Featured Memories section-এ দেখা যাবে।
+                      </Form.Text>
+
+                    </Card.Body>
+
+                  </Card>
+
+                </Col>
+
+                {/* =========================
+                    Comment
+                ========================== */}
+
+                <Col xs={12}>
+
                   <Form.Group>
+
                     <Form.Label className="fw-semibold">
                       Comment
                     </Form.Label>
@@ -817,41 +1222,61 @@ const EditMemory = () => {
                       rows={3}
                       value={comment}
                       onChange={(e) =>
-                        setComment(e.target.value)
+                        setComment(
+                          e.target.value
+                        )
                       }
                       placeholder="Any additional comment..."
                     />
+
                   </Form.Group>
+
                 </Col>
 
-                {/* Progress */}
-                {saving && newMedia.length > 0 && (
-                  <Col xs={12}>
-                    <div className="mb-2 d-flex justify-content-between">
-                      <small className="text-muted">
-                        Uploading new media...
-                      </small>
+                {/* =========================
+                    Progress
+                ========================== */}
 
-                      <small className="fw-bold">
-                        {progress}%
-                      </small>
-                    </div>
+                {saving &&
+                  newMedia.length > 0 && (
 
-                    <ProgressBar
-                      now={progress}
-                      label={`${progress}%`}
-                    />
-                  </Col>
-                )}
+                    <Col xs={12}>
 
-                {/* Buttons */}
+                      <div className="mb-2 d-flex justify-content-between">
+
+                        <small className="text-muted">
+                          Uploading new media...
+                        </small>
+
+                        <small className="fw-bold">
+                          {progress}%
+                        </small>
+
+                      </div>
+
+                      <ProgressBar
+                        now={progress}
+                        label={`${progress}%`}
+                      />
+
+                    </Col>
+                  )}
+
+                {/* =========================
+                    Buttons
+                ========================== */}
+
                 <Col xs={12}>
+
                   <div className="d-flex justify-content-end gap-2">
+
                     <Button
                       type="button"
                       variant="outline-secondary"
                       onClick={() =>
-                        navigate("/admin/memories")
+                        navigate(
+                          "/admin/memories"
+                        )
                       }
                       disabled={saving}
                     >
@@ -863,6 +1288,7 @@ const EditMemory = () => {
                       variant="dark"
                       disabled={saving}
                     >
+
                       {saving ? (
                         <>
                           <Spinner
@@ -877,14 +1303,23 @@ const EditMemory = () => {
                           Update Memory
                         </>
                       )}
+
                     </Button>
+
                   </div>
+
                 </Col>
+
               </Row>
+
             </Form>
+
           </Card.Body>
+
         </Card>
+
       </Container>
+
     </div>
   );
 };

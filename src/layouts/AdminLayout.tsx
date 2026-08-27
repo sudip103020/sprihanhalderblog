@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import Footer from "../components/Footer";
+
 
 const AdminLayout = () => {
   return (
@@ -8,7 +8,11 @@ const AdminLayout = () => {
         <Outlet />
       </main>
 
-      <Footer />
+      <footer className="admin-footer">
+  © 2026 Sprihan Halder • Admin Panel
+</footer>
+
+      
     </>
   );
 };

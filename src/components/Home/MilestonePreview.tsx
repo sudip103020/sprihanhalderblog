@@ -1,61 +1,131 @@
-import { Container, Row, Col, Card } from "react-bootstrap";
-import { FaCamera, FaArrowRight } from "react-icons/fa";
-
-const memories = [
-  {
-    id: 1,
-    title: "My First Days",
-    description: "The beginning of my beautiful journey.",
-  },
-  {
-    id: 2,
-    title: "Growing Up",
-    description: "Little moments that made everyone smile.",
-  },
-  {
-    id: 3,
-    title: "Happy Moments",
-    description: "Special memories with my family.",
-  },
-];
+import { Container, Card } from "react-bootstrap";
+import { FaMapMarkerAlt, FaHeart, FaExternalLinkAlt } from "react-icons/fa";
 
 const MemoriesPreview = () => {
+  const mapUrl =
+    "https://www.google.com/maps?q=23.6920001,90.4320026&z=17&output=embed";
+
+  const googleMapsUrl =
+    "https://maps.app.goo.gl/quDzaLatVXTgGY9D6";
+
   return (
-    <section className="memories-section" id="memories">
+    <section
+      className="memories-section"
+      id="memories"
+    >
       <Container>
+
+        {/* ================================
+            Heading
+        ================================= */}
+
         <div className="section-heading text-center">
-          <p className="section-subtitle">Beautiful moments</p>
+
+          <p className="section-subtitle">
+            Where my journey began
+          </p>
 
           <h2 className="section-title">
-            My <span>Memories</span>
+            My <span>Birthplace</span>
           </h2>
 
           <p>
-            Some little moments from my journey.
+            A special place where my beautiful journey began.
           </p>
+
         </div>
 
-        <Row className="g-4 mt-2">
-          {memories.map((memory) => (
-            <Col md={4} key={memory.id}>
-              <Card className="memory-card">
-                <div className="memory-image">
-                  <FaCamera />
-                </div>
+        {/* ================================
+            Birthplace Card
+        ================================= */}
 
-                <Card.Body>
-                  <Card.Title>{memory.title}</Card.Title>
+        <Card
+          className="border-0 shadow-sm overflow-hidden mt-4"
+          style={{
+            borderRadius: "20px",
+          }}
+        >
 
-                  <Card.Text>{memory.description}</Card.Text>
+          {/* ================================
+              Map
+          ================================= */}
 
-                  <a href="#memories" className="memory-link">
-                    View Memories <FaArrowRight />
-                  </a>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+          <div
+            style={{
+              width: "100%",
+              height: "400px",
+              overflow: "hidden",
+            }}
+          >
+
+            <iframe
+              src={mapUrl}
+              width="100%"
+              height="100%"
+              style={{
+                border: 0,
+              }}
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Sprihan's Birthplace"
+            />
+
+          </div>
+
+          {/* ================================
+              Content
+          ================================= */}
+
+          <div className="p-4 text-center">
+
+            <div
+              className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+              style={{
+                width: "55px",
+                height: "55px",
+                background: "#fff0f3",
+                color: "#e63956",
+              }}
+            >
+              <FaMapMarkerAlt size={22} />
+            </div>
+
+            <h4 className="fw-bold mb-2">
+              <FaHeart
+                className="me-2"
+                style={{ color: "#e63956" }}
+              />
+
+              My Birthplace
+            </h4>
+
+            <p className="text-muted mb-3">
+              This is the special place where my beautiful
+              journey began. A place that will always remain
+              close to my heart.
+            </p>
+
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline-dark px-4"
+            >
+              <FaMapMarkerAlt className="me-2" />
+
+              Open in Google Maps
+
+              <FaExternalLinkAlt
+                className="ms-2"
+                size={12}
+              />
+            </a>
+
+          </div>
+
+        </Card>
+
       </Container>
     </section>
   );

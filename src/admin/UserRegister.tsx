@@ -82,7 +82,7 @@ const UserRegister = () => {
         createdAt: serverTimestamp(),
       });
 
-   navigate("/admin/dashboard");
+      navigate("/admin/dashboard");
     } catch (error: any) {
       console.error(error);
 
