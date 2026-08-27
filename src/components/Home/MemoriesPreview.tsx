@@ -8,7 +8,6 @@ import {
   Spinner,
   Carousel,
   Badge,
-  Button,
 } from "react-bootstrap";
 
 import {
