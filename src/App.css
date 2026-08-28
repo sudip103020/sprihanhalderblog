@@ -1,3 +1,4 @@
+
 /* =========================================================
    NAVBAR
 ========================================================= */
@@ -28,9 +29,10 @@
 ========================================================= */
 
 .hero-section {
-  min-height: 88vh;
   display: flex;
   align-items: center;
+  min-height: auto;
+  padding: 28px 0 45px;
   background: linear-gradient(
     135deg,
     #fff8fb 0%,
@@ -39,21 +41,26 @@
   );
 }
 
-.min-vh-75 {
-  min-height: 78vh;
+
+/* =========================================================
+   HERO CONTENT
+========================================================= */
+
+.hero-content {
+  padding-right: 25px;
 }
 
 .hero-small-text {
-  font-size: 16px;
+  margin-bottom: 10px;
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 12px;
 }
 
 .hero-content h1 {
-  font-size: clamp(42px, 6vw, 72px);
+  margin-bottom: 18px;
+  font-size: clamp(36px, 4.5vw, 58px);
   font-weight: 800;
-  line-height: 1.05;
-  margin-bottom: 20px;
+  line-height: 1.08;
 }
 
 .hero-content h1 span {
@@ -61,22 +68,28 @@
 }
 
 .hero-description {
-  max-width: 560px;
-  font-size: 18px;
-  line-height: 1.8;
-  margin-bottom: 30px;
+  max-width: 500px;
+  margin-bottom: 25px;
+  font-size: 16px;
+  line-height: 1.7;
 }
+
+
+/* =========================================================
+   HERO BUTTONS
+========================================================= */
 
 .hero-buttons {
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 10px;
 }
 
 .primary-btn,
 .secondary-btn {
+  padding: 10px 20px;
   border-radius: 30px;
-  padding: 11px 22px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -96,66 +109,95 @@
 
 .hero-image-wrapper {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  padding-left: 20px;
 }
 
 .hero-image-box {
   position: relative;
-  width: min(430px, 90%);
-  aspect-ratio: 1 / 1;
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 20px;
-  border: 2px solid #f3b6c9;
-  border-radius: 50%;
+  justify-content: center;
+
+  width: min(300px, 82%);
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+
   background: #ffffff;
-  box-shadow: 0 15px 40px rgba(231, 84, 128, 0.12);
+  border: 1px solid #f3b6c9;
+  border-radius: 50%;
+  box-shadow: 0 10px 28px rgba(231, 84, 128, 0.10);
 }
 
 .hero-image-box::before {
   content: "";
   position: absolute;
-  inset: 8px;
+  inset: 5px;
+
   border: 1px dashed #f5c8d7;
   border-radius: 50%;
   pointer-events: none;
 }
 
+
+/* =========================================================
+   PROFILE IMAGE
+========================================================= */
+
+.profile-image,
+.profile-loading {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+}
+
 .profile-image {
-  width: 350px;
-  height: 350px;
+  display: block;
   max-width: 100%;
   max-height: 100%;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 8px solid #ffffff;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-}
 
-.profile-image img {
-  width: 100%;
-  height: 100%;
   object-fit: cover;
   object-position: center;
-  display: block;
+
+  border: 3px solid #ffffff;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
 }
 
-.hero-heart {
-  position: absolute;
-  right: 10px;
-  bottom: 35px;
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  background: #ff6b81;
-  color: #ffffff;
+.profile-loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+
+  background: #f8f8f8;
+  color: #999;
+  font-size: 13px;
+  text-align: center;
+}
+
+
+/* =========================================================
+   HERO HEART
+========================================================= */
+
+.hero-heart {
+  position: absolute;
+  right: 0;
+  bottom: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+
+  border-radius: 50%;
+  background: #ff6b81;
+  color: #ffffff;
+
+  font-size: 18px;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.13);
 }
 
 
@@ -163,54 +205,203 @@
    HERO INFO
 ========================================================= */
 
-.hero-info-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 25px;
+.hero-info {
+  margin-top: 15px !important;
 }
 
-.hero-info-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 15px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+.hero-badge {
+  padding: 7px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
-.hero-info-box > svg {
-  font-size: 20px;
+
+/* =========================================================
+   HERO RESPONSIVE
+========================================================= */
+
+@media (max-width: 991px) {
+
+  .hero-section {
+    padding: 35px 0 45px;
+  }
+
+  .hero-content {
+    padding-right: 0;
+    text-align: center;
+  }
+
+  .hero-description {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .hero-info {
+    display: flex;
+    justify-content: center;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 28px;
+    padding-left: 0;
+  }
+
+  .hero-image-box {
+    width: min(280px, 78%);
+  }
+
+  .profile-image,
+  .profile-loading {
+    width: 225px;
+    height: 225px;
+  }
 }
 
-.hero-info-box div {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
+
+/* =========================================================
+   MOBILE HERO
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .hero-section {
+    padding: 25px 0 35px;
+  }
+
+  .hero-small-text {
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .hero-content h1 {
+    margin-bottom: 15px;
+    font-size: clamp(32px, 9vw, 44px);
+    line-height: 1.1;
+  }
+
+  .hero-description {
+    margin-bottom: 20px;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .hero-info {
+    margin-top: 10px !important;
+  }
+
+  .hero-badge {
+    padding: 7px 10px !important;
+    font-size: 11px;
+  }
+
+  .hero-buttons {
+    margin-top: 20px !important;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    padding: 9px 17px;
+    font-size: 13px;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 25px;
+  }
+
+  .hero-image-box {
+    width: min(250px, 82%);
+    padding: 6px;
+  }
+
+  .profile-image,
+  .profile-loading {
+    width: 215px;
+    height: 215px;
+  }
+
+  .profile-image {
+    border-width: 2px;
+  }
+
+  .profile-loading {
+    font-size: 12px;
+  }
+
+  .hero-heart {
+    right: -2px;
+    bottom: 16px;
+
+    width: 44px;
+    height: 44px;
+
+    font-size: 17px;
+  }
 }
 
-.hero-info-box small {
-  color: #888;
-  font-size: 11px;
-}
 
-.hero-info-box strong {
-  font-size: 14px;
-}
+/* =========================================================
+   EXTRA SMALL HERO
+========================================================= */
 
-.hero-scroll {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 25px;
-  color: #666;
-  text-decoration: none;
-  font-size: 13px;
-}
+@media (max-width: 480px) {
 
-.hero-scroll:hover {
-  color: #000;
+  .hero-section {
+    padding: 20px 0 30px;
+  }
+
+  .hero-small-text {
+    font-size: 13px;
+  }
+
+  .hero-content h1 {
+    font-size: 30px;
+  }
+
+  .hero-description {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    max-width: 240px;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 22px;
+  }
+
+  .hero-image-box {
+    width: 220px;
+    padding: 5px;
+  }
+
+  .profile-image,
+  .profile-loading {
+    width: 190px;
+    height: 190px;
+  }
+
+  .hero-heart {
+    right: -2px;
+    bottom: 14px;
+
+    width: 42px;
+    height: 42px;
+
+    font-size: 16px;
+  }
 }
 
 
@@ -218,10 +409,15 @@
    COMMON SECTIONS
 ========================================================= */
 
+
+ /* =========================================================
+   COMMON SECTIONS
+========================================================= */
+
 .welcome-section,
 .memories-section,
 .milestone-section {
-  padding: 90px 0;
+  padding: 25px 0;
 }
 
 .welcome-section {
@@ -235,6 +431,7 @@
 .milestone-section {
   background: #ffffff;
 }
+
 
 .section-heading {
   margin-bottom: 35px;
@@ -408,13 +605,26 @@
 ========================================================= */
 
 .family-section {
-  padding: 80px 0;
+  padding: 25px 0 50px;
   background: #fff;
 }
 
 
 /* =========================================================
-   FAMILY CARD
+   FAMILY HEADER
+========================================================= */
+
+.family-section .section-title {
+  margin-bottom: 12px;
+}
+
+.family-section .section-text {
+  margin-bottom: 0;
+}
+
+
+/* =========================================================
+   FAMILY CARDS
 ========================================================= */
 
 .family-card {
@@ -426,31 +636,41 @@
 }
 
 .family-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-5px);
 }
 
 
 /* =========================================================
-   FAMILY PHOTO - CIRCULAR PROFILE STYLE
+   FAMILY PHOTO
 ========================================================= */
 
 .family-photo-box {
-  width: 140px;
-  height: 140px;
-  margin: 20px auto 10px;
+  width: 125px;
+  height: 125px;
+
+  margin: 16px auto 8px;
+
   border-radius: 50%;
   overflow: hidden;
+
   background: #f5f5f5;
+
   border: 4px solid #fff;
-  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
+
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.10);
 }
 
 .family-photo {
   width: 100%;
   height: 100%;
+
   object-fit: cover;
+  object-position: center;
+
   display: block;
+
   border-radius: 50%;
+
   transition: transform 0.4s ease;
 }
 
@@ -466,12 +686,24 @@
 .family-photo-placeholder {
   width: 100%;
   height: 100%;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   color: #aaa;
-  font-size: 45px;
+  font-size: 40px;
+
   border-radius: 50%;
+}
+
+
+/* =========================================================
+   FAMILY CARD CONTENT
+========================================================= */
+
+.family-card .card-body {
+  padding: 12px 15px 18px !important;
 }
 
 
@@ -480,8 +712,8 @@
 ========================================================= */
 
 .family-relation {
-  font-size: 0.75rem;
-  padding: 6px 10px;
+  font-size: 0.72rem;
+  padding: 5px 9px;
   border-radius: 20px;
 }
 
@@ -491,7 +723,8 @@
 ========================================================= */
 
 .family-name {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  margin-bottom: 6px !important;
 }
 
 
@@ -500,9 +733,9 @@
 ========================================================= */
 
 .family-description {
-  line-height: 1.6;
+  line-height: 1.5;
+  font-size: 0.85rem;
 }
-
 
 /* =========================================================
    FOOTER
@@ -995,39 +1228,6 @@
     margin-left: 0;
   }
 
-  .hero-section {
-    padding: 60px 0;
-  }
-
-  .hero-content {
-    text-align: center;
-  }
-
-  .hero-description {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero-buttons {
-    justify-content: center;
-  }
-
-  .hero-image-wrapper {
-    margin-top: 40px;
-  }
-
-  .hero-info-wrapper {
-    justify-content: center;
-  }
-
-  .hero-scroll {
-    justify-content: center;
-  }
-
-  .profile-image {
-    width: 320px;
-    height: 320px;
-  }
 }
 
 
@@ -1048,46 +1248,6 @@
   }
 
 
-  /* Hero */
-
-  .hero-section {
-    min-height: auto;
-    padding: 60px 0;
-  }
-
-  .hero-content h1 {
-    font-size: clamp(38px, 12vw, 55px);
-  }
-
-  .hero-description {
-    font-size: 16px;
-    line-height: 1.7;
-  }
-
-  .hero-image-wrapper {
-    margin-top: 40px;
-  }
-
-  .hero-image-box {
-    width: min(360px, 95%);
-    padding: 15px;
-  }
-
-  .profile-image {
-    width: 290px;
-    height: 290px;
-    border-width: 6px;
-  }
-
-  .hero-heart {
-    right: 0;
-    bottom: 25px;
-    width: 48px;
-    height: 48px;
-    font-size: 19px;
-  }
-
-
   /* Hero Info */
 
   .hero-info-box {
@@ -1103,21 +1263,7 @@
   }
 
 
-  /* Common Sections */
 
-  .welcome-section,
-  .memories-section,
-  .milestone-section {
-    padding: 65px 0;
-  }
-
-  .section-title {
-    font-size: 32px;
-  }
-
-  .section-text {
-    font-size: 16px;
-  }
 
 
   /* Memories */
@@ -1135,20 +1281,31 @@
   /* Family */
 
   .family-section {
-    padding: 60px 0;
-  }
+  padding: 45px 0 50px;
+}
 
-  .family-photo-box {
-    width: 115px;
-    height: 115px;
-    margin: 18px auto 8px;
-  }
+.family-photo-box {
+  width: 110px;
+  height: 110px;
+  margin: 14px auto 7px;
+}
 
-  .family-card {
-    max-width: 340px;
-    margin: 0 auto;
-  }
+.family-card {
+  max-width: 340px;
+  margin: 0 auto;
+}
 
+.family-card .card-body {
+  padding: 10px 14px 15px !important;
+}
+
+.family-name {
+  font-size: 1rem;
+}
+
+.family-description {
+  font-size: 0.82rem;
+}
 
   /* Footer */
 
@@ -1329,11 +1486,12 @@
 @media (max-width: 480px) {
 
   .hero-content h1 {
-    font-size: 38px;
+    font-size: 30px;
   }
 
   .hero-description {
-    font-size: 15px;
+    font-size: 13px;
+    line-height: 1.6;
   }
 
   .hero-buttons {
@@ -1348,8 +1506,8 @@
   }
 
   .profile-image {
-    width: 250px;
-    height: 250px;
+    width: 190px;
+    height: 190px;
   }
 
   .hero-heart {
@@ -1365,3 +1523,4 @@
     font-size: 1.45rem;
   }
 }
+

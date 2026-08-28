@@ -164,16 +164,8 @@ const FamilyPreview = () => {
 
           <Col lg={8}>
 
-            <div className="section-icon">
-              <FaHeart />
-            </div>
-
-            <p className="section-subtitle">
-              The people I love
-            </p>
-
             <h2 className="section-title">
-              My <span>Family</span>
+              <FaHeart />  My <span>Family</span>
             </h2>
 
             <p className="section-text">

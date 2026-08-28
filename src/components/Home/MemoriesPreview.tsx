@@ -224,9 +224,6 @@ const MemoriesPreview = () => {
 
         <div className="section-heading text-center">
 
-          <p className="section-subtitle">
-            Beautiful moments
-          </p>
 
           <h2 className="section-title">
             My <span>Memories</span>

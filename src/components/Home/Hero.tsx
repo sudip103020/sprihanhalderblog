@@ -32,14 +32,14 @@ const Hero = () => {
     }
 
     if (years === 0) {
-      return `${months} month${months !== 1 ? "s" : ""} old`;
+      return `${months} Month${months !== 1 ? "s" : ""} old`;
     }
 
     if (months === 0) {
-      return `${years} year${years !== 1 ? "s" : ""} old`;
+      return `${years} Year${years !== 1 ? "s" : ""} old`;
     }
 
-    return `${years} year${years !== 1 ? "s" : ""} ${months} month${
+    return `${years} Year${years !== 1 ? "s" : ""} ${months} Month${
       months !== 1 ? "s" : ""
     } old`;
   };
@@ -52,20 +52,15 @@ const Hero = () => {
     const loadProfile = async () => {
       try {
         const profileRef = doc(db, "siteSettings", "profile");
-
         const profileSnap = await getDoc(profileRef);
 
         if (profileSnap.exists()) {
           const data = profileSnap.data();
 
-          console.log("Profile data:", data);
-
-          // Profile Photo
           if (data.photoURL) {
             setProfilePhoto(data.photoURL);
           }
 
-          // Date of Birth
           if (data.dateOfBirth) {
             setDateOfBirth(data.dateOfBirth);
           }
@@ -97,82 +92,105 @@ const Hero = () => {
   };
 
   return (
-  <section className="hero-section">
-    <Container>
-      <Row className="align-items-center py-4 py-lg-5">
+    <section className="hero-section">
+      <Container>
+        <Row className="align-items-center">
 
-        {/* Hero Content */}
-        <Col lg={6} className="hero-content">
-          <p className="hero-small-text">
-            Welcome to my little world
-          </p>
+          {/* ================================
+              HERO CONTENT
+          ================================= */}
 
-          <h1>
-            Hello, I'm <span>Sprihan</span>
-          </h1>
+          <Col lg={6} className="hero-content">
+            <p className="hero-small-text">
+              Welcome to My Little World
+            </p>
 
-          <p className="hero-description">
-            A little collection of my precious moments, beautiful memories,
-            and my journey of growing up with love.
-          </p>
+            <h1>
+              Hello, I'm <span>Sprihan Halder</span>
+            </h1>
 
-          {!loading && dateOfBirth && (
-            <div className="hero-info mt-3">
-              <div className="d-flex flex-wrap gap-2">
-                <Badge bg="light" text="dark" className="p-2 border">
-                  <FaBirthdayCake className="me-2" />
-                  Birthday: {formatBirthday(dateOfBirth)}
-                </Badge>
+            <p className="hero-description">
+              A little collection of my precious moments, beautiful memories
+              and my journey of growing up with love.
+            </p>
 
-                <Badge bg="light" text="dark" className="p-2 border">
-                  🎂 {calculateAge(dateOfBirth)}
-                </Badge>
-              </div>
-            </div>
-          )}
+            {/* Birthday Information */}
 
-          <div className="hero-buttons mt-4">
-            <Button href="#memories" className="primary-btn">
-              <FaCamera className="me-2" />
-              Explore Memories
-            </Button>
+            {!loading && dateOfBirth && (
+              <div className="hero-info mt-3">
+                <div className="d-flex flex-wrap gap-2">
+                  <Badge
+                    bg="light"
+                    text="dark"
+                    className="p-2 border hero-badge"
+                  >
+                    <FaBirthdayCake className="me-2" />
+                    Birthday: {formatBirthday(dateOfBirth)}
+                  </Badge>
 
-            <Button href="#family" className="secondary-btn">
-              <FaHeart className="me-2" />
-              My Family
-            </Button>
-          </div>
-        </Col>
-
-        {/* Hero Image */}
-        <Col lg={6} className="hero-image-wrapper">
-          <div className="hero-image-box">
-            <div className="image-placeholder">
-              {loading ? (
-                <div className="profile-loading">Loading...</div>
-              ) : profilePhoto ? (
-                <img
-                  src={profilePhoto}
-                  alt="Sprihan"
-                  className="profile-image"
-                />
-              ) : (
-                <div className="profile-loading">
-                  No Profile Image
+                  <Badge
+                    bg="light"
+                    text="dark"
+                    className="p-2 border hero-badge"
+                  >
+                    🎂 {calculateAge(dateOfBirth)}
+                  </Badge>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="hero-heart">
-              <FaHeart />
-            </div>
-          </div>
-        </Col>
+            {/* Buttons */}
 
-      </Row>
-    </Container>
-  </section>
-);
+            <div className="hero-buttons mt-4">
+              <Button href="#memories" className="primary-btn">
+                <FaCamera className="me-2" />
+                Explore Memories
+              </Button>
+
+              <Button href="#family" className="secondary-btn">
+                <FaHeart className="me-2" />
+                My Family
+              </Button>
+            </div>
+          </Col>
+
+          {/* ================================
+              HERO IMAGE
+          ================================= */}
+
+          <Col lg={6} className="hero-image-wrapper">
+            <div className="hero-image-box">
+
+              <div className="image-placeholder">
+                {loading ? (
+                  <div className="profile-loading">
+                    Loading...
+                  </div>
+                ) : profilePhoto ? (
+                  <img
+                    src={profilePhoto}
+                    alt="Sprihan"
+                    className="profile-image"
+                  />
+                ) : (
+                  <div className="profile-loading">
+                    No Profile Image
+                  </div>
+                )}
+              </div>
+
+              <div className="hero-heart">
+                <FaHeart />
+              </div>
+
+            </div>
+          </Col>
+
+        </Row>
+      </Container>
+    </section>
+  );
 };
 
 export default Hero;
+
