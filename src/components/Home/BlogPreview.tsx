@@ -211,16 +211,13 @@ const BlogPreview = () => {
 
         <div className="section-heading text-center">
 
-          <p className="section-subtitle">
-            From my little journal
-          </p>
 
           <h2 className="section-title">
-            My <span>Blog</span>
+            My <span>Blogs</span>
           </h2>
 
           <p>
-            Little stories, experiences,
+            Little stories, experiences
             and beautiful moments from
             my journey.
           </p>
@@ -368,7 +365,7 @@ const BlogPreview = () => {
                           "hidden",
                       }}
                     >
-                      {blog.description}
+                   
                     </Card.Text>
 
                     {/* Read More */}
@@ -381,6 +378,8 @@ const BlogPreview = () => {
                       <Button
                         variant="outline-dark"
                         size="sm"
+                     
+                        className="btn btn-outline-dark birthplace-button"
                       >
                         Read More
                         <FaArrowRight className="ms-2" />
@@ -408,7 +407,10 @@ const BlogPreview = () => {
 
             <Link
               to="/blogs"
-              className="btn btn-dark px-4 py-2"
+              
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline-dark birthplace-button px-4 py-2"
             >
               View All Blogs
               <FaArrowRight className="ms-2" />

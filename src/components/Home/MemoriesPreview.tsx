@@ -393,8 +393,7 @@ const MemoriesPreview = () => {
       overflow: "hidden",
     }}
   >
-    {memory.description ||
-      "A beautiful memory from my journey."}
+   
   </Card.Text>
 
   {/* =================================
@@ -403,7 +402,8 @@ const MemoriesPreview = () => {
 
   <Link
     to={`/memory/${memory.id}`}
-    className="btn btn-outline-dark btn-sm mt-2"
+    
+              className="btn btn-outline-dark birthplace-button"
   >
     Read More
     <FaArrowRight className="ms-2" />
@@ -428,8 +428,10 @@ const MemoriesPreview = () => {
               <Link
                
                 to="/memories"
-                
-                className="px-4 py-2"
+                target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline-dark birthplace-button px-4 py-2"
+              
               >
                 View All Memories
                 <FaArrowRight className="ms-2" />

@@ -1,5 +1,8 @@
 import { Container, Card } from "react-bootstrap";
-import { FaMapMarkerAlt, FaHeart, FaExternalLinkAlt } from "react-icons/fa";
+import {
+  FaMapMarkerAlt,
+  FaExternalLinkAlt,
+} from "react-icons/fa";
 
 const MemoriesPreview = () => {
   const mapUrl =
@@ -10,7 +13,7 @@ const MemoriesPreview = () => {
 
   return (
     <section
-      className="memories-section"
+      className="memories-section birthplace-section"
       id="memories"
     >
       <Container>
@@ -21,16 +24,16 @@ const MemoriesPreview = () => {
 
         <div className="section-heading text-center">
 
-          <p className="section-subtitle">
-            Where my journey began
-          </p>
+            <h2 className="section-title">
+                        <FaMapMarkerAlt />  My <span>Birthplace</span>
+                      </h2>
 
-          <h2 className="section-title">
-            My <span>Birthplace</span>
-          </h2>
+          
 
           <p>
-            A special place where my beautiful journey began.
+            This is the special place where my beautiful
+              journey began. A place that will always remain
+              close to my heart.
           </p>
 
         </div>
@@ -39,32 +42,19 @@ const MemoriesPreview = () => {
             Birthplace Card
         ================================= */}
 
-        <Card
-          className="border-0 shadow-sm overflow-hidden mt-4"
-          style={{
-            borderRadius: "20px",
-          }}
-        >
+        <Card className="birthplace-card border-0 shadow-sm">
 
           {/* ================================
               Map
           ================================= */}
 
-          <div
-            style={{
-              width: "100%",
-              height: "400px",
-              overflow: "hidden",
-            }}
-          >
+          <div className="birthplace-map">
 
             <iframe
               src={mapUrl}
               width="100%"
               height="100%"
-              style={{
-                border: 0,
-              }}
+              style={{ border: 0 }}
               loading="lazy"
               allowFullScreen
               referrerPolicy="no-referrer-when-downgrade"
@@ -77,49 +67,28 @@ const MemoriesPreview = () => {
               Content
           ================================= */}
 
-          <div className="p-4 text-center">
+          <div className="birthplace-content text-center">
 
-            <div
-              className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-              style={{
-                width: "55px",
-                height: "55px",
-                background: "#fff0f3",
-                color: "#e63956",
-              }}
-            >
-              <FaMapMarkerAlt size={22} />
-            </div>
+          
 
-            <h4 className="fw-bold mb-2">
-              <FaHeart
-                className="me-2"
-                style={{ color: "#e63956" }}
-              />
-
-              My Birthplace
-            </h4>
-
-            <p className="text-muted mb-3">
-              This is the special place where my beautiful
-              journey began. A place that will always remain
-              close to my heart.
-            </p>
+            
 
             <a
               href={googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-outline-dark px-4"
+              className="btn btn-outline-dark birthplace-button"
             >
+
               <FaMapMarkerAlt className="me-2" />
 
               Open in Google Maps
 
               <FaExternalLinkAlt
                 className="ms-2"
-                size={12}
+                size={11}
               />
+
             </a>
 
           </div>
@@ -132,3 +101,4 @@ const MemoriesPreview = () => {
 };
 
 export default MemoriesPreview;
+

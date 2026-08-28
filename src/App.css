@@ -1524,3 +1524,310 @@
   }
 }
 
+/* =========================================================
+   BLOG SECTION
+========================================================= */
+
+.blog-section {
+  padding: 25px 0 25px;
+  background: #ffffff;
+}
+
+/* Blog Heading */
+.blog-section .section-heading {
+  margin-bottom: 30px;
+}
+
+/* Blog Cards */
+.blog-card {
+  height: 100%;
+  border-radius: 18px !important;
+  overflow: hidden;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.blog-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.09) !important;
+}
+
+.blog-card .card-body {
+  padding: 20px !important;
+}
+
+.blog-card .card-title {
+  font-size: 18px;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.blog-card .card-text {
+  font-size: 14px;
+  line-height: 1.65;
+  margin-bottom: 16px;
+}
+
+/* Blog Image */
+.blog-card img,
+.blog-card > div {
+  height: 210px !important;
+}
+
+/* View All Blogs */
+.blog-section .mt-5 {
+  margin-top: 30px !important;
+}
+
+
+/* =========================================================
+   BLOG MOBILE
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .blog-section {
+    padding: 25px 0 40px;
+  }
+
+  .blog-section .section-heading {
+    margin-bottom: 25px;
+  }
+
+  .blog-card .card-body {
+    padding: 17px !important;
+  }
+
+  .blog-card img,
+  .blog-card > div {
+    height: 190px !important;
+  }
+
+  .blog-card .card-title {
+    font-size: 17px;
+  }
+
+  .blog-card .card-text {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .blog-section .mt-5 {
+    margin-top: 25px !important;
+  }
+}
+
+
+/* =========================================================
+   BLOG EXTRA SMALL
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .blog-section {
+    padding: 20px 0 35px;
+  }
+
+  .blog-section .section-heading {
+    margin-bottom: 22px;
+  }
+
+  .blog-card img,
+  .blog-card > div {
+    height: 180px !important;
+  }
+
+  .blog-card .card-body {
+    padding: 15px !important;
+  }
+
+  .blog-card .card-title {
+    font-size: 16px;
+  }
+
+  .blog-card .card-text {
+    font-size: 13px;
+  }
+}
+
+
+/* =========================================================
+   BIRTHPLACE / MAP SECTION
+========================================================= */
+
+.birthplace-section {
+  padding: 25px 0 40px;
+}
+
+.birthplace-section .section-heading {
+  margin-bottom: 25px;
+}
+
+
+/* =========================================================
+   BIRTHPLACE CARD
+========================================================= */
+
+.birthplace-card {
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   MAP
+========================================================= */
+
+.birthplace-map {
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+}
+
+.birthplace-map iframe {
+  display: block;
+}
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.birthplace-content {
+  padding: 22px 25px 25px;
+}
+
+.birthplace-icon {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #fff0f3;
+  color: #e63956;
+}
+
+.birthplace-title {
+  margin-bottom: 8px;
+
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.birthplace-heart {
+  margin-right: 8px;
+  color: #e63956;
+  font-size: 16px;
+}
+
+.birthplace-description {
+  max-width: 600px;
+  margin: 0 auto 15px;
+
+  font-size: 14px;
+  line-height: 1.7;
+  color: #777;
+}
+
+.birthplace-button {
+  padding: 8px 18px !important;
+  border-radius: 25px !important;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 991px) {
+
+  .birthplace-map {
+    height: 280px;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 767px) {
+
+  .birthplace-section {
+    padding: 25px 0 35px;
+  }
+
+  .birthplace-section .section-heading {
+    margin-bottom: 20px;
+  }
+
+  .birthplace-card {
+    border-radius: 17px !important;
+  }
+
+  .birthplace-map {
+    height: 230px;
+  }
+
+  .birthplace-content {
+    padding: 18px 15px 20px;
+  }
+
+  .birthplace-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 8px;
+  }
+
+  .birthplace-title {
+    font-size: 18px;
+  }
+
+  .birthplace-description {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 13px;
+  }
+
+  .birthplace-button {
+    padding: 7px 15px !important;
+    font-size: 12px;
+  }
+
+}
+
+
+/* =========================================================
+   EXTRA SMALL
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .birthplace-map {
+    height: 210px;
+  }
+
+  .birthplace-content {
+    padding: 16px 12px 18px;
+  }
+
+  .birthplace-description {
+    font-size: 12.5px;
+  }
+
+}
+
+
+
