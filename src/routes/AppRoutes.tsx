@@ -26,6 +26,7 @@ import DocumentPost from "../admin/DocumentPost";
 import UserRegister from "../admin/UserRegister";
 
 import FamilyMembers from "../admin/FamilyMembers";
+import GiftCorner from "../admin/GiftCorner";
 
 import UserList from "../admin/UserList";
 import UserProtectedRoute from "../admin/UserProtectedRoute";
@@ -46,20 +47,10 @@ const AppRoutes = () => {
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/memories" element={<Memoriespublic />} />
-        <Route
-  path="/blog/:id"
-  element={<BlogDetails />}
-  
-/>
-<Route
-  path="/blogs"
-  element={<Blogs />}
-/>
+        <Route path="/blog/:id" element={<BlogDetails />} />
+        <Route path="/blogs" element={<Blogs />} />
 
-<Route
-  path="/memory/:id"
-  element={<MemoryDetails />}
-/>
+        <Route path="/memory/:id" element={<MemoryDetails />} />
 
         <Route path="/admin/login" element={<Login />} />
       </Route>
@@ -93,14 +84,27 @@ const AppRoutes = () => {
     FAMILY MEMBERS
 ========================== */}
 
-<Route
-  path="/admin/family-members"
-  element={
-    <ProtectedRoute>
-      <FamilyMembers />
-    </ProtectedRoute>
-  }
-/>
+        <Route
+          path="/admin/family-members"
+          element={
+            <ProtectedRoute>
+              <FamilyMembers />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* =========================
+    GIFT CORNER
+========================== */}
+
+        <Route
+          path="/admin/gift-corner"
+          element={
+            <ProtectedRoute>
+              <GiftCorner />
+            </ProtectedRoute>
+          }
+        />
 
         {/* User List */}
         <Route
@@ -113,13 +117,13 @@ const AppRoutes = () => {
         />
 
         <Route
-  path="/user/profile"
-  element={
-    <UserProtectedRoute>
-      <UserProfile />
-    </UserProtectedRoute>
-  }
-/>
+          path="/user/profile"
+          element={
+            <UserProtectedRoute>
+              <UserProfile />
+            </UserProtectedRoute>
+          }
+        />
 
         {/* Chat */}
         <Route

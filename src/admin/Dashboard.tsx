@@ -16,6 +16,7 @@ import {
 } from "react-bootstrap";
 
 import {
+  FaGift,
   FaImages,
   FaPen,
   FaSignOutAlt,
@@ -31,7 +32,13 @@ import {
   FaComments,
 } from "react-icons/fa";
 
-import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
 
 import { auth, db } from "../firebase/config";
 
@@ -43,12 +50,36 @@ interface CategoryCard {
   bg: string;
 }
 
+interface MemoryMedia {
+  url?: string;
+  mediaType?: "image" | "video";
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
 
+  // ==========================================
+  // Loading
+  // ==========================================
+
   const [loading, setLoading] = useState(true);
+
+  // ==========================================
+  // Dashboard Counts
+  // ==========================================
+
+  const [memoryCount, setMemoryCount] = useState(0);
+  const [pictureCount, setPictureCount] = useState(0);
+  const [videoCount, setVideoCount] = useState(0);
+
+  const [giftCount, setGiftCount] = useState(0);
   const [blogCount, setBlogCount] = useState(0);
+  const [documentCount, setDocumentCount] = useState(0);
   const [familyMemberCount, setFamilyMemberCount] = useState(0);
+
+  // ==========================================
+  // Memory Category Counts
+  // ==========================================
 
   const [counts, setCounts] = useState({
     prescription: 0,
@@ -59,23 +90,30 @@ const Dashboard = () => {
     other: 0,
   });
 
+  // ==========================================
   // Profile
+  // ==========================================
+
   const [profileLoading, setProfileLoading] = useState(true);
+
   const [profileName, setProfileName] = useState("Admin");
   const [profileEmail, setProfileEmail] = useState("");
   const [profilePhoto, setProfilePhoto] = useState("");
 
   const [showProfileModal, setShowProfileModal] = useState(false);
+
   const [profileFile, setProfileFile] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState("");
+
   const [uploadingProfile, setUploadingProfile] = useState(false);
+
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
-  const [documentCount, setDocumentCount] = useState(0);
 
-  // =========================
+  // ==========================================
   // Load Profile
-  // =========================
+  // ==========================================
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -96,13 +134,15 @@ const Dashboard = () => {
             data.name ||
               user.displayName ||
               user.email?.split("@")[0] ||
-              "Admin",
+              "Admin"
           );
 
           setProfilePhoto(data.photoURL || "");
         } else {
           setProfileName(
-            user.displayName || user.email?.split("@")[0] || "Admin",
+            user.displayName ||
+              user.email?.split("@")[0] ||
+              "Admin"
           );
         }
       } catch (error) {
@@ -115,15 +155,22 @@ const Dashboard = () => {
     return () => unsubscribe();
   }, [navigate]);
 
-  // =========================
+  // ==========================================
   // Load Dashboard Stats
-  // =========================
+  // ==========================================
+
   useEffect(() => {
     const loadStats = async () => {
       try {
         setLoading(true);
 
-        const memorySnapshot = await getDocs(collection(db, "memories"));
+        // ==========================================
+        // Memories
+        // ==========================================
+
+        const memorySnapshot = await getDocs(
+          collection(db, "memories")
+        );
 
         const newCounts = {
           prescription: 0,
@@ -134,31 +181,103 @@ const Dashboard = () => {
           other: 0,
         };
 
-        const documentSnapshot = await getDocs(collection(db, "documents"));
-
-        setDocumentCount(documentSnapshot.size);
-
-        const familySnapshot = await getDocs(collection(db, "familyMembers"));
-
-        setFamilyMemberCount(familySnapshot.size);
+        let totalPictures = 0;
+        let totalVideos = 0;
 
         memorySnapshot.docs.forEach((item) => {
           const data = item.data();
+
+          // ==========================================
+          // Category Count
+          // ==========================================
+
           const type = data.type;
 
-          if (Object.prototype.hasOwnProperty.call(newCounts, type)) {
-            newCounts[type as keyof typeof newCounts]++;
+          if (
+            Object.prototype.hasOwnProperty.call(
+              newCounts,
+              type
+            )
+          ) {
+            newCounts[
+              type as keyof typeof newCounts
+            ]++;
+          }
+
+          // ==========================================
+          // New Media Structure
+          // ==========================================
+
+          if (Array.isArray(data.media)) {
+            const media: MemoryMedia[] = data.media;
+
+            media.forEach((item) => {
+              if (item.mediaType === "video") {
+                totalVideos++;
+              } else {
+                totalPictures++;
+              }
+            });
+          }
+
+          // ==========================================
+          // Old Images Structure
+          // ==========================================
+
+          else if (Array.isArray(data.images)) {
+            totalPictures += data.images.length;
           }
         });
 
+        setMemoryCount(memorySnapshot.size);
+        setPictureCount(totalPictures);
+        setVideoCount(totalVideos);
         setCounts(newCounts);
 
-        // Blog count
-        const blogSnapshot = await getDocs(collection(db, "blogPosts"));
+        // ==========================================
+        // Gift Corner
+        // ==========================================
+
+        const giftSnapshot = await getDocs(
+          collection(db, "giftCorner")
+        );
+
+        setGiftCount(giftSnapshot.size);
+
+        // ==========================================
+        // Blog Posts
+        // ==========================================
+
+        const blogSnapshot = await getDocs(
+          collection(db, "blogPosts")
+        );
 
         setBlogCount(blogSnapshot.size);
+
+        // ==========================================
+        // Documents
+        // ==========================================
+
+        const documentSnapshot = await getDocs(
+          collection(db, "documents")
+        );
+
+        setDocumentCount(documentSnapshot.size);
+
+        // ==========================================
+        // Family Members
+        // ==========================================
+
+        const familySnapshot = await getDocs(
+          collection(db, "familyMembers")
+        );
+
+        setFamilyMemberCount(familySnapshot.size);
       } catch (error) {
-        console.error("Dashboard stats error:", error);
+        console.error(
+          "Dashboard stats error:",
+          error
+        );
       } finally {
         setLoading(false);
       }
@@ -167,9 +286,10 @@ const Dashboard = () => {
     loadStats();
   }, []);
 
-  // =========================
+  // ==========================================
   // Logout
-  // =========================
+  // ==========================================
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -179,166 +299,224 @@ const Dashboard = () => {
     }
   };
 
-  // =========================
+  // ==========================================
   // Profile File Select
-  // =========================
-  const handleProfileFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // ==========================================
+
+  const handleProfileFile = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
 
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setProfileError("শুধু image file নির্বাচন করুন।");
+      setProfileError(
+        "শুধু image file নির্বাচন করুন।"
+      );
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setProfileError("Profile photo সর্বোচ্চ 5MB হতে পারবে।");
+      setProfileError(
+        "Profile photo সর্বোচ্চ 5MB হতে পারবে।"
+      );
       return;
     }
 
     setProfileError("");
+    setProfileSuccess("");
+
     setProfileFile(file);
 
     const preview = URL.createObjectURL(file);
+
     setProfilePreview(preview);
 
     event.target.value = "";
   };
 
-  // =========================
+  // ==========================================
   // Upload Profile Photo
-  // =========================
+  // ==========================================
+
   const handleProfileUpload = async () => {
     if (!profileFile) {
-      setProfileError("একটি ছবি নির্বাচন করুন।");
+      setProfileError(
+        "একটি ছবি নির্বাচন করুন।"
+      );
       return;
     }
 
     const user = auth.currentUser;
 
     if (!user) {
-      setProfileError("Admin login পাওয়া যায়নি।");
+      setProfileError(
+        "Admin login পাওয়া যায়নি।"
+      );
       return;
     }
 
     try {
       setUploadingProfile(true);
+
       setProfileError("");
       setProfileSuccess("");
 
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const cloudName =
+        import.meta.env
+          .VITE_CLOUDINARY_CLOUD_NAME;
 
-      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const uploadPreset =
+        import.meta.env
+          .VITE_CLOUDINARY_UPLOAD_PRESET;
 
       if (!cloudName || !uploadPreset) {
-        throw new Error("Cloudinary configuration পাওয়া যায়নি।");
+        throw new Error(
+          "Cloudinary configuration পাওয়া যায়নি।"
+        );
       }
 
-      // =========================
+      // ==========================================
       // Cloudinary Upload
-      // =========================
+      // ==========================================
 
       const formData = new FormData();
 
-      formData.append("file", profileFile);
-      formData.append("upload_preset", uploadPreset);
+      formData.append(
+        "file",
+        profileFile
+      );
+
+      formData.append(
+        "upload_preset",
+        uploadPreset
+      );
 
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       if (!response.ok) {
-        throw new Error("Profile photo upload failed.");
+        throw new Error(
+          "Profile photo upload failed."
+        );
       }
 
       const data = await response.json();
 
       const photoURL = data.secure_url;
 
-      // =========================
+      // ==========================================
       // Save Public Profile Photo
-      // =========================
+      // ==========================================
 
       await setDoc(
-        doc(db, "siteSettings", "profile"),
+        doc(
+          db,
+          "siteSettings",
+          "profile"
+        ),
         {
           photoURL,
           updatedAt: new Date(),
         },
         {
           merge: true,
-        },
+        }
       );
 
-      // =========================
-      // Also Save Admin Profile
-      // =========================
+      // ==========================================
+      // Save Admin Profile
+      // ==========================================
 
       await setDoc(
-        doc(db, "users", user.uid),
+        doc(
+          db,
+          "users",
+          user.uid
+        ),
         {
-          name: profileName || user.email?.split("@")[0] || "Admin",
-          email: user.email || "",
+          name:
+            profileName ||
+            user.email?.split("@")[0] ||
+            "Admin",
+
+          email:
+            user.email || "",
+
           photoURL,
+
           updatedAt: new Date(),
         },
         {
           merge: true,
-        },
+        }
       );
 
-      // =========================
+      // ==========================================
       // Update UI
-      // =========================
+      // ==========================================
 
       setProfilePhoto(photoURL);
+
       setProfileFile(null);
 
       if (profilePreview) {
-        URL.revokeObjectURL(profilePreview);
+        URL.revokeObjectURL(
+          profilePreview
+        );
       }
 
       setProfilePreview("");
 
-      setProfileSuccess("Profile photo সফলভাবে পরিবর্তন হয়েছে।");
+      setProfileSuccess(
+        "Profile photo সফলভাবে পরিবর্তন হয়েছে।"
+      );
     } catch (error) {
-      console.error("Profile photo upload error:", error);
+      console.error(
+        "Profile photo upload error:",
+        error
+      );
 
       setProfileError(
         error instanceof Error
           ? error.message
-          : "Profile photo upload করতে সমস্যা হয়েছে।",
+          : "Profile photo upload করতে সমস্যা হয়েছে।"
       );
     } finally {
       setUploadingProfile(false);
     }
   };
 
-  // =========================
+  // ==========================================
   // Close Profile Modal
-  // =========================
+  // ==========================================
+
   const closeProfileModal = () => {
     if (profilePreview) {
-      URL.revokeObjectURL(profilePreview);
+      URL.revokeObjectURL(
+        profilePreview
+      );
     }
 
     setProfilePreview("");
     setProfileFile(null);
+
     setProfileError("");
     setProfileSuccess("");
+
     setShowProfileModal(false);
   };
 
-  const totalMemories = Object.values(counts).reduce((a, b) => a + b, 0);
-
-  // =========================
+  // ==========================================
   // Categories
-  // =========================
+  // ==========================================
+
   const categories: CategoryCard[] = [
     {
       type: "prescription",
@@ -384,52 +562,149 @@ const Dashboard = () => {
     },
   ];
 
+  // ==========================================
+  // Category Count
+  // ==========================================
+
   const getCount = (type: string) => {
-    return counts[type as keyof typeof counts] || 0;
+    return (
+      counts[
+        type as keyof typeof counts
+      ] || 0
+    );
   };
 
-  const displayPhoto = profilePreview || profilePhoto;
+  // ==========================================
+  // Profile Display Photo
+  // ==========================================
+
+  const displayPhoto =
+    profilePreview || profilePhoto;
+
+  // ==========================================
+  // Stat Card Helper
+  // ==========================================
+
+  const renderStatCard = (
+    title: string,
+    value: number,
+    icon: React.ReactNode,
+    bg: string,
+    route: string
+  ) => {
+    return (
+      <Col xs={6} md={3}>
+        <Card
+          className="dashboard-stat-card h-100"
+          style={{
+            cursor: "pointer",
+          }}
+          onClick={() =>
+            navigate(route)
+          }
+        >
+          <Card.Body className="p-4">
+            <div className="d-flex align-items-center">
+              <div
+                className={`rounded-3 bg-${bg} ${
+                  bg === "warning"
+                    ? "text-dark"
+                    : "text-white"
+                } d-flex align-items-center justify-content-center me-3`}
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  fontSize: "22px",
+                  flexShrink: 0,
+                }}
+              >
+                {icon}
+              </div>
+
+              <div>
+                <div className="dashboard-stat-label">
+                  {title}
+                </div>
+
+                <h2 className="dashboard-stat-number mb-0">
+                  {loading ? (
+                    <Spinner
+                      animation="border"
+                      size="sm"
+                    />
+                  ) : (
+                    value
+                  )}
+                </h2>
+              </div>
+            </div>
+          </Card.Body>
+        </Card>
+      </Col>
+    );
+  };
+
+  // ==========================================
+  // Return
+  // ==========================================
 
   return (
     <div className="min-vh-100 bg-light">
-      {/* =========================
+      {/* ========================================
           Header
-      ========================== */}
+      ======================================== */}
+
       <div className="bg-white shadow-sm sticky-top">
         <Container>
           <div className="d-flex justify-content-between align-items-center py-3">
-            {/* Logo */}
+            {/* Welcome */}
+
             <div className="d-flex align-items-center">
               <div>
-                <small className="fw-bold mb-0">Welcome ! Sprihan Halder</small>
+                <small className="fw-bold mb-0">
+                  Welcome ! Sprihan Halder
+                </small>
               </div>
             </div>
 
             {/* Right */}
+
             <div className="d-flex align-items-center gap-2">
               {/* Messages */}
+
               <Button
                 variant="light"
                 className="dashboard-header-btn"
-                onClick={() => navigate("/users")}
+                onClick={() =>
+                  navigate("/users")
+                }
                 title="Messages"
               >
                 <FaComments />
               </Button>
+
               {/* Profile */}
+
               <Button
                 variant="light"
                 className="rounded-circle p-0 border"
                 style={{
-                  width: "44px",
-                  height: "44px",
+                  width: "40px",
+                  height: "40px",
                   overflow: "hidden",
                 }}
-                onClick={() => setShowProfileModal(true)}
+                onClick={() =>
+                  setShowProfileModal(
+                    true
+                  )
+                }
                 title="Profile"
               >
                 {profileLoading ? (
-                  <Spinner animation="border" size="sm" />
+                  <Spinner
+                    animation="border"
+                    size="sm"
+                  />
                 ) : displayPhoto ? (
                   <Image
                     src={displayPhoto}
@@ -439,309 +714,331 @@ const Dashboard = () => {
                     }}
                   />
                 ) : (
-                  <span style={{ fontSize: "20px" }}>👤</span>
+                  <span
+                    style={{
+                      fontSize: "20px",
+                    }}
+                  >
+                    👤
+                  </span>
                 )}
               </Button>
 
               {/* Logout */}
+
               <Button
                 variant="outline-danger"
                 className="rounded-pill px-3"
-                onClick={handleLogout}
+                onClick={
+                  handleLogout
+                }
               >
                 <FaSignOutAlt className="me-2" />
-                <span className="d-none d-sm-inline">Logout</span>
+
+                <span className="d-none d-sm-inline">
+                  Logout
+                </span>
               </Button>
             </div>
           </div>
         </Container>
       </div>
 
-      {/* =========================
+      {/* ========================================
           Main
-      ========================== */}
+      ======================================== */}
+
       <Container className="py-4 dashboard-container">
-        {/* Welcome */}
-
-        {/* =========================
+        {/* ========================================
             Overview
-        ========================== */}
+        ======================================== */}
+
         <Row className="g-4 mb-5">
-          <Col xs={6} md={3}>
-            <Card
-              className="dashboard-stat-card h-100"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/admin/memories")}
-            >
-              <Card.Body className="p-4">
-                <div className="d-flex align-items-center">
-                  <div className="dashboard-stat-icon bg-dark text-white me-3">
-                    <FaImages />
-                  </div>
+          {/* Total Memories */}
 
-                  <div>
-                    <div className="dashboard-stat-label">Total Memories</div>
+          {renderStatCard(
+            "Total Memories",
+            memoryCount,
+            <FaImages />,
+            "dark",
+            "/admin/memories"
+          )}
 
-                    <h2 className="dashboard-stat-number">
-                      {loading ? (
-                        <Spinner animation="border" size="sm" />
-                      ) : (
-                        totalMemories
-                      )}
-                    </h2>
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+          {/* Total Pictures */}
 
-          <Col xs={6} md={3}>
-            <Card
-              className="dashboard-stat-card h-100"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/admin/blogs")}
-            >
-              <Card.Body className="p-4">
-                <div className="d-flex align-items-center">
-                  <div
-                    className="rounded-3 bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      fontSize: "26px",
-                    }}
-                  >
-                    <FaBlog />
-                  </div>
+          {renderStatCard(
+            "Total Pictures",
+            pictureCount,
+            "📸",
+            "info",
+            "/admin/memories"
+          )}
 
-                  <div>
-                    <div className="dashboard-stat-label">Total Blog Posts</div>
+          {/* Total Videos */}
 
-                    <h2 className="dashboard-stat-number">
-                      {loading ? (
-                        <Spinner animation="border" size="sm" />
-                      ) : (
-                        blogCount
-                      )}
-                    </h2>
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+          {renderStatCard(
+            "Total Videos",
+            videoCount,
+            <FaVideo />,
+            "primary",
+            "/admin/memories?type=video"
+          )}
 
-          <Col xs={6} md={3}>
-            <Card
-              className="dashboard-stat-card h-100"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/admin/documents")}
-            >
-              <Card.Body className="p-4">
-                <div className="d-flex align-items-center">
-                  <div
-                    className="rounded-3 bg-danger text-white d-flex align-items-center justify-content-center me-3"
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      fontSize: "26px",
-                    }}
-                  >
-                    📄
-                  </div>
+          {/* Gift Corner */}
 
-                  <div>
-                    <div className="dashboard-stat-label"> Total Documents</div>
+          {renderStatCard(
+            "Gift Corner",
+            giftCount,
+            <FaGift />,
+            "warning",
+            "/admin/gift-corner"
+          )}
 
-                    <h2 className="dashboard-stat-number">
-                      {loading ? (
-                        <Spinner animation="border" size="sm" />
-                      ) : (
-                        documentCount
-                      )}
-                    </h2>
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+          {/* Blog Posts */}
 
-          <Col xs={6} md={3}>
-            <Card
-              className="dashboard-stat-card h-100"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate("/admin/family-members")}
-            >
-              <Card.Body className="p-4">
-                <div className="d-flex align-items-center">
-                  <div
-                    className="rounded-3 bg-success text-white d-flex align-items-center justify-content-center me-3"
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      fontSize: "26px",
-                    }}
-                  >
-                    👨‍👩‍👦
-                  </div>
+          {renderStatCard(
+            "Total Blog Posts",
+            blogCount,
+            <FaBlog />,
+            "primary",
+            "/admin/blogs"
+          )}
 
-                  <div>
-                    <div className="dashboard-stat-label">Family Members</div>
+          {/* Documents */}
 
-                    <h2 className="dashboard-stat-number">
-                      {loading ? (
-                        <Spinner animation="border" size="sm" />
-                      ) : (
-                        familyMemberCount
-                      )}
-                    </h2>
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
+          {renderStatCard(
+            "Total Documents",
+            documentCount,
+            "📄",
+            "danger",
+            "/admin/documents"
+          )}
+
+          {/* Family Members */}
+
+          {renderStatCard(
+            "Family Members",
+            familyMemberCount,
+            "👨‍👩‍👦",
+            "success",
+            "/admin/family-members"
+          )}
         </Row>
 
-        {/* =========================
+        {/* ========================================
             Categories
-        ========================== */}
+        ======================================== */}
+
         <div className="mb-4">
-          <h4 className="fw-bold mb-1">Memories by Category</h4>
+          <h4 className="fw-bold mb-1">
+            Memories by Category
+          </h4>
         </div>
 
         <Row className="g-4">
-          {categories.map((category) => (
-            <Col xs={6} sm={6} lg={3} key={category.type}>
-              <Card
-                className="dashboard-category-card h-100"
-                style={{
-                  cursor: "pointer",
-                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                }}
-                onClick={() =>
-                  navigate(`/admin/memories?type=${category.type}`)
-                }
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-5px)";
-                  e.currentTarget.style.boxShadow =
-                    "0 10px 25px rgba(0,0,0,0.10)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "";
-                }}
+          {categories.map(
+            (category) => (
+              <Col
+                xs={6}
+                sm={6}
+                lg={3}
+                key={category.type}
               >
-                <Card.Body className="p-4">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div
-                      className={`dashboard-category-icon bg-${category.bg} text-white`}
-                    >
-                      {category.icon}
+                <Card
+                  className="dashboard-category-card h-100"
+                  style={{
+                    cursor: "pointer",
+                    transition:
+                      "transform 0.2s ease, box-shadow 0.2s ease",
+                  }}
+                  onClick={() =>
+                    navigate(
+                      `/admin/memories?type=${category.type}`
+                    )
+                  }
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform =
+                      "translateY(-5px)";
+
+                    e.currentTarget.style.boxShadow =
+                      "0 10px 25px rgba(0,0,0,0.10)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform =
+                      "translateY(0)";
+
+                    e.currentTarget.style.boxShadow =
+                      "";
+                  }}
+                >
+                  <Card.Body className="p-4">
+                    <div className="d-flex justify-content-between align-items-start">
+                      <div
+                        className={`dashboard-category-icon bg-${category.bg} text-white`}
+                      >
+                        {category.icon}
+                      </div>
+
+                      <div className="text-end">
+                        <h2 className="dashboard-category-count">
+                          {loading ? (
+                            <Spinner
+                              animation="border"
+                              size="sm"
+                            />
+                          ) : (
+                            getCount(
+                              category.type
+                            )
+                          )}
+                        </h2>
+
+                        <small className="text-muted">
+                          Memories
+                        </small>
+                      </div>
                     </div>
 
-                    <div className="text-end">
-                      <h2 className="dashboard-category-count">
-                        {loading ? (
-                          <Spinner animation="border" size="sm" />
-                        ) : (
-                          getCount(category.type)
-                        )}
-                      </h2>
+                    <div className="mt-4">
+                      <h5 className="fw-bold mb-1">
+                        {category.title}
+                      </h5>
 
-                      <small className="text-muted">Memories</small>
+                      <p className="text-muted mb-0">
+                        {
+                          category.description
+                        }
+                      </p>
                     </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <h5 className="fw-bold mb-1">{category.title}</h5>
-
-                    <p className="text-muted mb-0">{category.description}</p>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
+                  </Card.Body>
+                </Card>
+              </Col>
+            )
+          )}
         </Row>
 
-        {/* =========================
+        {/* ========================================
             Quick Actions
-        ========================== */}
+        ======================================== */}
+
         <div className="mt-5">
-          <h4 className="fw-bold mb-3">Add Task Section</h4>
+          <h4 className="fw-bold mb-3">
+            Add Task Section
+          </h4>
 
           <Row className="g-3">
+            {/* Add Memory */}
+
             <Col xs={6} md={3}>
               <Button
                 variant="dark"
                 className="w-100 py-3"
-                onClick={() => navigate("/admin/memories/add")}
+                onClick={() =>
+                  navigate(
+                    "/admin/memories/add"
+                  )
+                }
               >
                 <FaImages className="me-2" />
                 Add New Memory
               </Button>
             </Col>
 
+            {/* Blog */}
+
             <Col xs={6} md={3}>
               <Button
                 variant="primary"
                 className="w-100 py-3"
-                onClick={() => navigate("/admin/blogs/add")}
+                onClick={() =>
+                  navigate(
+                    "/admin/blogs/add"
+                  )
+                }
               >
                 <FaPen className="me-2" />
                 Write Blog Post
               </Button>
             </Col>
 
+            {/* Document */}
+
             <Col xs={6} md={3}>
               <Button
                 variant="danger"
                 className="w-100 py-3"
-                onClick={() => navigate("/admin/documents/add")}
+                onClick={() =>
+                  navigate(
+                    "/admin/documents/add"
+                  )
+                }
               >
                 📄
-                <span className="ms-2">Add Doc</span>
+                <span className="ms-2">
+                  Add Doc
+                </span>
               </Button>
             </Col>
+
             {/* Register User */}
+
             <Col xs={6} md={3}>
               <Button
                 variant="success"
                 className="w-100 py-3"
-                onClick={() => navigate("/admin/users/register")}
+                onClick={() =>
+                  navigate(
+                    "/admin/users/register"
+                  )
+                }
               >
                 <FaUserPlus className="me-2" />
                 Register User
               </Button>
             </Col>
-
-            
           </Row>
         </div>
-
-        {/* =========================
-            Profile Card
-        ========================== */}
       </Container>
 
-      {/* =========================
+      {/* ========================================
           Profile Modal
-      ========================== */}
-      <Modal show={showProfileModal} onHide={closeProfileModal} centered>
+      ======================================== */}
+
+      <Modal
+        show={showProfileModal}
+        onHide={closeProfileModal}
+        centered
+      >
         <Modal.Header closeButton>
-          <Modal.Title className="fw-bold">Admin Profile</Modal.Title>
+          <Modal.Title className="fw-bold">
+            Admin Profile
+          </Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
+          {/* Error */}
+
           {profileError && (
             <Alert
               variant="danger"
               dismissible
-              onClose={() => setProfileError("")}
+              onClose={() =>
+                setProfileError("")
+              }
             >
               {profileError}
             </Alert>
           )}
 
-          {profileSuccess && <Alert variant="success">{profileSuccess}</Alert>}
+          {/* Success */}
+
+          {profileSuccess && (
+            <Alert variant="success">
+              {profileSuccess}
+            </Alert>
+          )}
+
+          {/* Profile */}
 
           <div className="text-center mb-4">
             <div
@@ -767,42 +1064,68 @@ const Dashboard = () => {
               )}
             </div>
 
-            <small className="text-muted">{profileEmail}</small>
+            <small className="text-muted">
+              {profileEmail}
+            </small>
           </div>
 
+          {/* File */}
+
           <Form.Group>
-            <Form.Label className="fw-semibold">Profile Photo</Form.Label>
+            <Form.Label className="fw-semibold">
+              Profile Photo
+            </Form.Label>
 
             <Form.Control
               type="file"
               accept="image/*"
-              onChange={handleProfileFile}
-              disabled={uploadingProfile}
+              onChange={
+                handleProfileFile
+              }
+              disabled={
+                uploadingProfile
+              }
             />
 
             <Form.Text className="text-muted">
-              JPG, PNG অথবা WebP. Maximum 5MB.
+              JPG, PNG অথবা WebP.
+              Maximum 5MB.
             </Form.Text>
           </Form.Group>
         </Modal.Body>
 
+        {/* Footer */}
+
         <Modal.Footer>
           <Button
             variant="secondary"
-            onClick={closeProfileModal}
-            disabled={uploadingProfile}
+            onClick={
+              closeProfileModal
+            }
+            disabled={
+              uploadingProfile
+            }
           >
             Close
           </Button>
 
           <Button
             variant="dark"
-            onClick={handleProfileUpload}
-            disabled={uploadingProfile || !profileFile}
+            onClick={
+              handleProfileUpload
+            }
+            disabled={
+              uploadingProfile ||
+              !profileFile
+            }
           >
             {uploadingProfile ? (
               <>
-                <Spinner size="sm" className="me-2" />
+                <Spinner
+                  size="sm"
+                  className="me-2"
+                />
+
                 Uploading...
               </>
             ) : (
@@ -819,3 +1142,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
