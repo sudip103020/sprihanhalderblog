@@ -37,6 +37,9 @@ import UserDashboard from "../admin/user/dashboard/UserDashboard";
 import Adminuser from "../admin/user/messages/UserList";
 import Chat from "../admin/user/messages/Chat";
 import AdminuserProfile from "../admin/user/profile/UserProfile";
+import UserSettings from "../admin/user/settings/UserSettings";
+import ChangePassword from "../admin/user/settings/ChangePassword";
+import Medical from "../admin/user/medical/Medical";
 
 import ProtectedRoute from "../admin/ProtectedRoute";
 import UserLayout from "../admin/user/components/UserLayout";
@@ -156,9 +159,38 @@ const AppRoutes = () => {
   }
 />
 
-        
+ <Route
+  path="/user/settings"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <UserSettings />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
 
-       
+<Route
+  path="/user/settings/password"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <ChangePassword />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+       <Route
+  path="/user/medical"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <Medical />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
         
 
        

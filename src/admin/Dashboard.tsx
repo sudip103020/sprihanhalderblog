@@ -679,7 +679,7 @@ const Dashboard = () => {
                 onClick={() =>
                   navigate("/user/dashboard")
                 }
-                title="Messages"
+                title="Your Profile"
               >
                 <FaUser />
               </Button>
@@ -699,7 +699,7 @@ const Dashboard = () => {
                     true
                   )
                 }
-                title="Profile"
+                title="Sprihan Profile"
               >
                 {profileLoading ? (
                   <Spinner

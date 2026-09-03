@@ -337,31 +337,30 @@ const Login = () => {
                         required
                       />
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowPassword(
-                            !showPassword
-                          )
-                        }
-                        style={{
-                          position: "absolute",
-                          right: "14px",
-                          top: "50%",
-                          transform:
-                            "translateY(-50%)",
-                          border: "none",
-                          background: "transparent",
-                          color: "#6c757d",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {showPassword ? (
-                          <FaEyeSlash />
-                        ) : (
-                          <FaEye />
-                        )}
-                      </button>
+             <button
+  type="button"
+  onClick={() => setShowPassword(!showPassword)}
+  style={{
+    position: "absolute",
+    right: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    fontSize: "22px",
+    padding: "4px",
+    zIndex: 5,
+    lineHeight: 1,
+  }}
+  title={
+    showPassword
+      ? "Hide password"
+      : "Show password"
+  }
+>
+  {showPassword ? "🐵" : "🙈"}
+</button>
 
                     </div>
                   </Form.Group>

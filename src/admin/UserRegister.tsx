@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  getAuth,
+} from "firebase/auth";
+
+import { initializeApp, getApps } from "firebase/app";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
@@ -12,6 +18,7 @@ import {
   Button,
   Alert,
   Spinner,
+  Modal,
 } from "react-bootstrap";
 
 import {
@@ -24,7 +31,10 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 
-import { auth, db } from "../firebase/config";
+import {
+  db,
+  firebaseConfig,
+} from "../firebase/config";
 
 const UserRegister = () => {
   const navigate = useNavigate();
@@ -39,72 +49,166 @@ const UserRegister = () => {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
 
-    setError("");
+  // ==========================================
+// Secondary Firebase App
+// This allows Admin to create another user
+// without logging Admin out
+// ==========================================
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
+const secondaryApp =
+  getApps().find(
+    (app) => app.name === "SecondaryApp"
+  ) ||
+  initializeApp(
+    firebaseConfig,
+    "SecondaryApp"
+  );
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+const secondaryAuth = getAuth(
+  secondaryApp
+);
 
-    setLoading(true);
+ const handleRegister = async (
+  e: React.FormEvent<HTMLFormElement>
+) => {
+  e.preventDefault();
 
-    try {
-      // Create Firebase Authentication user
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
+  setError("");
+  setShowSuccessModal(false);
+
+  // ==========================================
+  // Password Validation
+  // ==========================================
+
+  if (password.length < 6) {
+    setError(
+      "Password must be at least 6 characters."
+    );
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError(
+      "Passwords do not match."
+    );
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // ==========================================
+    // Create User Using SECONDARY AUTH
+    // Admin will stay logged in
+    // ==========================================
+
+    const userCredential =
+      await createUserWithEmailAndPassword(
+        secondaryAuth,
         email,
-        password,
+        password
       );
 
-      const user = userCredential.user;
+    const user = userCredential.user;
 
-      // Update Firebase profile
-      await updateProfile(user, {
-        displayName: name,
-      });
+    // ==========================================
+    // Update Firebase Profile
+    // ==========================================
 
-      // Save user information in Firestore
-      await setDoc(doc(db, "users", user.uid), {
+    await updateProfile(user, {
+      displayName: name,
+    });
+
+    // ==========================================
+    // Save User in Firestore
+    // ==========================================
+
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
         uid: user.uid,
         name: name,
         email: email,
         photo: "",
         role: "user",
         createdAt: serverTimestamp(),
-      });
-
-      navigate("/admin/dashboard");
-    } catch (error: any) {
-      console.error(error);
-
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          setError("An account already exists with this email.");
-          break;
-
-        case "auth/invalid-email":
-          setError("Please enter a valid email address.");
-          break;
-
-        case "auth/weak-password":
-          setError("Password is too weak. Use at least 6 characters.");
-          break;
-
-        default:
-          setError("Registration failed. Please try again.");
       }
-    } finally {
-      setLoading(false);
+    );
+
+    // ==========================================
+    // Sign Out Secondary Auth
+    // ==========================================
+
+    await secondaryAuth.signOut();
+
+    // ==========================================
+    // Clear Form
+    // ==========================================
+
+    setName("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+
+    // ==========================================
+    // Show Success Modal
+    // ==========================================
+
+    setShowSuccessModal(true);
+
+  } catch (error: any) {
+    console.error(
+      "Registration Error:",
+      error
+    );
+
+    switch (error.code) {
+      case "auth/email-already-in-use":
+        setError(
+          "An account already exists with this email."
+        );
+        break;
+
+      case "auth/invalid-email":
+        setError(
+          "Please enter a valid email address."
+        );
+        break;
+
+      case "auth/weak-password":
+        setError(
+          "Password is too weak. Use at least 6 characters."
+        );
+        break;
+
+      case "permission-denied":
+        setError(
+          "You do not have permission to create this user."
+        );
+        break;
+
+      default:
+        setError(
+          error.message ||
+            "Registration failed. Please try again."
+        );
     }
+  } finally {
+    setLoading(false);
+  }
+};
+  // ==========================================
+  // OK Button → Admin Dashboard
+  // ==========================================
+  const handleSuccessOk = () => {
+    setShowSuccessModal(false);
+
+    navigate("/admin/dashboard", {
+      replace: true,
+    });
   };
 
   return (
@@ -117,7 +221,7 @@ const UserRegister = () => {
         overflow: "hidden",
       }}
     >
-      {/* Decorative circle */}
+      {/* Decorative Circle */}
       <div
         style={{
           position: "absolute",
@@ -159,6 +263,7 @@ const UserRegister = () => {
               }}
             >
               <Card.Body className="p-4 p-md-5">
+
                 {/* Logo */}
                 <div className="text-center mb-4">
                   <div
@@ -167,29 +272,40 @@ const UserRegister = () => {
                       width: "82px",
                       height: "82px",
                       borderRadius: "24px",
-                      background: "linear-gradient(135deg, #212529, #495057)",
+                      background:
+                        "linear-gradient(135deg, #212529, #495057)",
                       color: "#fff",
                     }}
                   >
                     <FaBaby size={38} />
                   </div>
 
-                  <h2 className="fw-bold mt-4 mb-1">Create Account</h2>
+                  <h2 className="fw-bold mt-4 mb-1">
+                    Create Account
+                  </h2>
 
-                  <p className="text-muted mb-0">Join Sprihan Halder Blog</p>
+                  <p className="text-muted mb-0">
+                    Join Sprihan Halder Blog
+                  </p>
                 </div>
 
                 {/* Error */}
                 {error && (
-                  <Alert variant="danger" className="rounded-3 small">
+                  <Alert
+                    variant="danger"
+                    className="rounded-3 small"
+                  >
                     {error}
                   </Alert>
                 )}
 
                 <Form onSubmit={handleRegister}>
-                  {/* Name */}
+
+                  {/* Full Name */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Full Name</Form.Label>
+                    <Form.Label className="fw-semibold">
+                      Full Name
+                    </Form.Label>
 
                     <div className="position-relative">
                       <FaUser
@@ -207,7 +323,9 @@ const UserRegister = () => {
                         type="text"
                         placeholder="Enter your name"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) =>
+                          setName(e.target.value)
+                        }
                         className="ps-5 py-3 rounded-3"
                         style={{
                           background: "#f8f9fa",
@@ -239,7 +357,9 @@ const UserRegister = () => {
                         type="email"
                         placeholder="Enter your email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) =>
+                          setEmail(e.target.value)
+                        }
                         className="ps-5 py-3 rounded-3"
                         style={{
                           background: "#f8f9fa",
@@ -251,7 +371,9 @@ const UserRegister = () => {
 
                   {/* Password */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Password</Form.Label>
+                    <Form.Label className="fw-semibold">
+                      Password
+                    </Form.Label>
 
                     <div className="position-relative">
                       <FaLock
@@ -266,10 +388,14 @@ const UserRegister = () => {
                       />
 
                       <Form.Control
-                        type={showPassword ? "text" : "password"}
+                        type={
+                          showPassword ? "text" : "password"
+                        }
                         placeholder="Enter password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) =>
+                          setPassword(e.target.value)
+                        }
                         className="ps-5 pe-5 py-3 rounded-3"
                         style={{
                           background: "#f8f9fa",
@@ -279,7 +405,9 @@ const UserRegister = () => {
 
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() =>
+                          setShowPassword(!showPassword)
+                        }
                         style={{
                           position: "absolute",
                           right: "14px",
@@ -288,9 +416,14 @@ const UserRegister = () => {
                           border: "none",
                           background: "transparent",
                           color: "#6c757d",
+                          cursor: "pointer",
                         }}
                       >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        {showPassword ? (
+                          <FaEyeSlash />
+                        ) : (
+                          <FaEye />
+                        )}
                       </button>
                     </div>
                   </Form.Group>
@@ -314,10 +447,16 @@ const UserRegister = () => {
                       />
 
                       <Form.Control
-                        type={showConfirmPassword ? "text" : "password"}
+                        type={
+                          showConfirmPassword
+                            ? "text"
+                            : "password"
+                        }
                         placeholder="Confirm password"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={(e) =>
+                          setConfirmPassword(e.target.value)
+                        }
                         className="ps-5 pe-5 py-3 rounded-3"
                         style={{
                           background: "#f8f9fa",
@@ -328,7 +467,9 @@ const UserRegister = () => {
                       <button
                         type="button"
                         onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
+                          setShowConfirmPassword(
+                            !showConfirmPassword
+                          )
                         }
                         style={{
                           position: "absolute",
@@ -338,26 +479,35 @@ const UserRegister = () => {
                           border: "none",
                           background: "transparent",
                           color: "#6c757d",
+                          cursor: "pointer",
                         }}
                       >
-                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                        {showConfirmPassword ? (
+                          <FaEyeSlash />
+                        ) : (
+                          <FaEye />
+                        )}
                       </button>
                     </div>
                   </Form.Group>
 
-                  {/* Register */}
+                  {/* Register Button */}
                   <Button
                     type="submit"
                     variant="dark"
                     className="w-100 py-3 rounded-3 fw-semibold border-0"
                     disabled={loading}
                     style={{
-                      background: "linear-gradient(135deg, #212529, #343a40)",
+                      background:
+                        "linear-gradient(135deg, #212529, #343a40)",
                     }}
                   >
                     {loading ? (
                       <>
-                        <Spinner size="sm" className="me-2" />
+                        <Spinner
+                          size="sm"
+                          className="me-2"
+                        />
                         Creating Account...
                       </>
                     ) : (
@@ -369,22 +519,59 @@ const UserRegister = () => {
                   </Button>
                 </Form>
 
-                {/* Login */}
-                {/* Back to Dashboard */}
-                <div className="text-center mt-4">
-                  <Button
-                    variant="link"
-                    className="text-decoration-none fw-semibold"
-                    onClick={() => navigate("/admin/dashboard")}
-                  >
-                    ← Back to Dashboard
-                  </Button>
-                </div>
               </Card.Body>
             </Card>
           </Col>
         </Row>
       </Container>
+
+      {/* ==========================================
+          SUCCESS MODAL
+      ========================================== */}
+      <Modal
+        show={showSuccessModal}
+        onHide={() => setShowSuccessModal(false)}
+        centered
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Body className="text-center p-5">
+
+          {/* Success Icon */}
+          <div
+            className="mx-auto d-flex align-items-center justify-content-center mb-4"
+            style={{
+              width: "75px",
+              height: "75px",
+              borderRadius: "50%",
+              background: "#d1e7dd",
+              color: "#198754",
+              fontSize: "36px",
+              fontWeight: "700",
+            }}
+          >
+            ✓
+          </div>
+
+          <h3 className="fw-bold mb-2">
+            Registration Successful!
+          </h3>
+
+          <p className="text-muted mb-4">
+            Your account has been created successfully.
+          </p>
+
+          {/* OK → Admin Dashboard */}
+          <Button
+            variant="dark"
+            className="px-5 py-2 rounded-pill fw-semibold"
+            onClick={handleSuccessOk}
+          >
+            OK
+          </Button>
+
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

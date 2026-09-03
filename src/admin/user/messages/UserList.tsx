@@ -413,7 +413,7 @@ const UserList = () => {
 
   return (
     <div
-      className="min-vh-100 py-4 py-md-5"
+      className="min-vh-100 py-4 py-md-2"
       style={{
         background:
           "linear-gradient(180deg, #f8f9fa 0%, #eef1f4 100%)",
@@ -452,7 +452,7 @@ const UserList = () => {
           <div>
             <div className="d-flex align-items-center gap-2">
               <h4 className="fw-bold mb-1">
-                Messages
+                Users
               </h4>
 
               <Badge
@@ -463,9 +463,7 @@ const UserList = () => {
               </Badge>
             </div>
 
-            <p className="text-muted mb-0">
-              Connect and chat with other users.
-            </p>
+          
           </div>
         </div>
 

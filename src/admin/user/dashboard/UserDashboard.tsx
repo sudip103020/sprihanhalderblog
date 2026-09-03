@@ -12,7 +12,6 @@ import {
   FaComments,
   FaHeartbeat,
   FaUser,
-  FaFileAlt,
   FaBell,
   FaPhoneAlt,
   FaArrowRight,
@@ -41,6 +40,16 @@ interface UserData {
   bio?: string;
 }
 
+
+interface MedicalData {
+  weight?: string;
+  height?: string;
+  bloodPressure?: string;
+  pulse?: string;
+  oxygen?: string;
+  bloodGroup?: string;
+}
+
 const UserDashboard = () => {
   const navigate = useNavigate();
 
@@ -50,209 +59,282 @@ const UserDashboard = () => {
   const [medicalAvailable, setMedicalAvailable] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [medicalData, setMedicalData] =
+  useState<MedicalData | null>(null);
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      try {
-        const currentUser = auth.currentUser;
+useEffect(() => {
+  const loadDashboard = async () => {
+    try {
+      const currentUser = auth.currentUser;
 
-        if (!currentUser) {
-          navigate("/admin/login");
-          return;
-        }
+      if (!currentUser) {
+        navigate("/admin/login");
+        return;
+      }
 
-        // --------------------------------------------------
-        // LOAD USER DATA
-        // --------------------------------------------------
+      // --------------------------------------------------
+      // LOAD USER DATA
+      // --------------------------------------------------
 
-        const storedUser = localStorage.getItem("user");
+      const storedUser = localStorage.getItem("user");
 
-        let localUser: UserData = {};
+      let localUser: UserData = {};
 
-        if (storedUser) {
-          try {
-            localUser = JSON.parse(storedUser);
-          } catch {
-            localUser = {};
-          }
-        }
-
-        let finalUser: UserData = {
-          ...localUser,
-          uid: currentUser.uid,
-          email: currentUser.email || localUser.email,
-        };
-
-        // --------------------------------------------------
-        // LOAD USER FROM FIRESTORE
-        // --------------------------------------------------
-
+      if (storedUser) {
         try {
-          const userQuery = query(
-            collection(db, "users"),
-            where("uid", "==", currentUser.uid)
-          );
-
-          const userSnapshot = await getDocs(userQuery);
-
-          if (!userSnapshot.empty) {
-            const firestoreUser = userSnapshot.docs[0].data();
-
-            finalUser = {
-              ...finalUser,
-              ...firestoreUser,
-              uid: currentUser.uid,
-              email:
-                firestoreUser.email ||
-                currentUser.email ||
-                finalUser.email,
-            };
-          }
-        } catch (error) {
-          console.log("User data loading skipped:", error);
+          localUser = JSON.parse(storedUser);
+        } catch {
+          localUser = {};
         }
+      }
 
-        setUserData(finalUser);
+      let finalUser: UserData = {
+        ...localUser,
+        uid: currentUser.uid,
+        email: currentUser.email || localUser.email,
+      };
 
-        // --------------------------------------------------
-        // PROFILE COMPLETION
-        // --------------------------------------------------
+      // --------------------------------------------------
+      // LOAD USER FROM FIRESTORE
+      // --------------------------------------------------
 
-        const profileFields = [
-          finalUser.name,
-          finalUser.email,
-          finalUser.phone,
-          finalUser.photo,
-          finalUser.dob,
-          finalUser.gender,
-          finalUser.address,
-          finalUser.city,
-          finalUser.country,
-          finalUser.bio,
-        ];
-
-        const completedFields = profileFields.filter(
-          (field) =>
-            field !== undefined &&
-            field !== null &&
-            String(field).trim() !== ""
-        ).length;
-
-        const completion = Math.round(
-          (completedFields / profileFields.length) * 100
+      try {
+        const userQuery = query(
+          collection(db, "users"),
+          where("uid", "==", currentUser.uid)
         );
 
-        setProfileCompletion(completion);
+        const userSnapshot = await getDocs(userQuery);
 
-        // --------------------------------------------------
-        // UNREAD MESSAGES
-        // --------------------------------------------------
+        if (!userSnapshot.empty) {
+          const firestoreUser = userSnapshot.docs[0].data();
 
-        try {
-          const conversationsQuery = query(
-            collection(db, "conversations"),
-            where("participants", "array-contains", currentUser.uid)
-          );
-
-          const conversationsSnapshot = await getDocs(
-            conversationsQuery
-          );
-
-          let unreadTotal = 0;
-
-          for (const conversationDoc of conversationsSnapshot.docs) {
-            try {
-              const messagesQuery = query(
-                collection(
-                  db,
-                  "conversations",
-                  conversationDoc.id,
-                  "messages"
-                ),
-                where("receiverId", "==", currentUser.uid),
-                where("seen", "==", false)
-              );
-
-              const messagesSnapshot = await getDocs(messagesQuery);
-
-              unreadTotal += messagesSnapshot.size;
-            } catch (error) {
-              console.log(
-                "Unread message check skipped:",
-                error
-              );
-            }
-          }
-
-          setUnreadMessages(unreadTotal);
-        } catch (error) {
-          console.log("Messages loading skipped:", error);
-          setUnreadMessages(0);
-        }
-
-        // --------------------------------------------------
-        // DOCUMENTS
-        // --------------------------------------------------
-
-        try {
-          const documentsQuery = query(
-            collection(db, "documents"),
-            where("userId", "==", currentUser.uid)
-          );
-
-          const documentsSnapshot = await getDocs(
-            documentsQuery
-          );
-
-          setDocumentsCount(documentsSnapshot.size);
-        } catch (error) {
-          console.log("Documents loading skipped:", error);
-          setDocumentsCount(0);
-        }
-
-        // --------------------------------------------------
-        // MEDICAL INFORMATION
-        // --------------------------------------------------
-
-        try {
-          const medicalQuery = query(
-            collection(db, "medicalInfo"),
-            where("userId", "==", currentUser.uid)
-          );
-
-          const medicalSnapshot = await getDocs(medicalQuery);
-
-          setMedicalAvailable(!medicalSnapshot.empty);
-        } catch (error) {
-          console.log("Medical information check skipped:", error);
-
-          // Fallback: try medical collection
-          try {
-            const medicalQuery = query(
-              collection(db, "medical"),
-              where("userId", "==", currentUser.uid)
-            );
-
-            const medicalSnapshot = await getDocs(medicalQuery);
-
-            setMedicalAvailable(!medicalSnapshot.empty);
-          } catch {
-            setMedicalAvailable(false);
-          }
+          finalUser = {
+            ...finalUser,
+            ...firestoreUser,
+            uid: currentUser.uid,
+            email:
+              firestoreUser.email ||
+              currentUser.email ||
+              finalUser.email,
+          };
         }
       } catch (error) {
-        console.error("Dashboard error:", error);
-      } finally {
-        setLoading(false);
+        console.log("User data loading skipped:", error);
       }
-    };
 
-    loadDashboard();
-  }, [navigate]);
+      setUserData(finalUser);
+
+      // --------------------------------------------------
+      // PROFILE COMPLETION
+      // --------------------------------------------------
+
+      const profileFields = [
+        finalUser.name,
+        finalUser.email,
+        finalUser.phone,
+        finalUser.photo,
+        finalUser.dob,
+        finalUser.gender,
+        finalUser.address,
+        finalUser.city,
+        finalUser.country,
+        finalUser.bio,
+      ];
+
+      const completedFields = profileFields.filter(
+        (field) =>
+          field !== undefined &&
+          field !== null &&
+          String(field).trim() !== ""
+      ).length;
+
+      const completion = Math.round(
+        (completedFields / profileFields.length) * 100
+      );
+
+      setProfileCompletion(completion);
+
+      // --------------------------------------------------
+      // UNREAD MESSAGES
+      // --------------------------------------------------
+
+      try {
+        const conversationsQuery = query(
+          collection(db, "conversations"),
+          where(
+            "participants",
+            "array-contains",
+            currentUser.uid
+          )
+        );
+
+        const conversationsSnapshot =
+          await getDocs(conversationsQuery);
+
+        let unreadTotal = 0;
+
+        for (const conversationDoc of conversationsSnapshot.docs) {
+          try {
+            const messagesQuery = query(
+              collection(
+                db,
+                "conversations",
+                conversationDoc.id,
+                "messages"
+              ),
+              where(
+                "receiverId",
+                "==",
+                currentUser.uid
+              ),
+              where("seen", "==", false)
+            );
+
+            const messagesSnapshot =
+              await getDocs(messagesQuery);
+
+            unreadTotal += messagesSnapshot.size;
+          } catch (error) {
+            console.log(
+              "Unread message check skipped:",
+              error
+            );
+          }
+        }
+
+        setUnreadMessages(unreadTotal);
+      } catch (error) {
+        console.log(
+          "Messages loading skipped:",
+          error
+        );
+
+        setUnreadMessages(0);
+      }
+
+      // --------------------------------------------------
+      // MEDICAL DOCUMENTS
+      // --------------------------------------------------
+
+      try {
+        const documentsQuery = query(
+          collection(db, "medicalDocuments"),
+          where(
+            "userId",
+            "==",
+            currentUser.uid
+          )
+        );
+
+        const documentsSnapshot =
+          await getDocs(documentsQuery);
+
+        setDocumentsCount(
+          documentsSnapshot.size
+        );
+      } catch (error) {
+        console.log(
+          "Medical documents loading skipped:",
+          error
+        );
+
+        setDocumentsCount(0);
+      }
+
+      // --------------------------------------------------
+      // MEDICAL INFORMATION
+      // --------------------------------------------------
+
+      try {
+        const medicalQuery = query(
+          collection(db, "medicalInfo"),
+          where(
+            "userId",
+            "==",
+            currentUser.uid
+          )
+        );
+
+        const medicalSnapshot =
+          await getDocs(medicalQuery);
+
+        if (!medicalSnapshot.empty) {
+          const medical =
+            medicalSnapshot.docs[0].data();
+
+          setMedicalData({
+            weight: medical.weight || "",
+            height: medical.height || "",
+            bloodPressure:
+              medical.bloodPressure || "",
+            pulse: medical.pulse || "",
+            oxygen: medical.oxygen || "",
+            bloodGroup:
+              medical.bloodGroup || "",
+          });
+
+          setMedicalAvailable(true);
+        } else {
+          setMedicalData(null);
+          setMedicalAvailable(false);
+        }
+      } catch (error) {
+        console.log(
+          "Medical information loading skipped:",
+          error
+        );
+
+        setMedicalData(null);
+        setMedicalAvailable(false);
+      }
+    } catch (error) {
+      console.error(
+        "Dashboard error:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadDashboard();
+}, [navigate]);
 
   // --------------------------------------------------
   // LOADING
   // --------------------------------------------------
+// --------------------------------------------------
+// BMI CALCULATION
+// --------------------------------------------------
+
+const weightValue = parseFloat(
+  medicalData?.weight || ""
+);
+
+const heightValue = parseFloat(
+  medicalData?.height || ""
+);
+
+const bmi =
+  weightValue > 0 && heightValue > 0
+    ? weightValue /
+      Math.pow(heightValue / 100, 2)
+    : null;
+
+const bmiValue =
+  bmi !== null ? bmi.toFixed(1) : "--";
+
+const bmiStatus =
+  bmi === null
+    ? "No data"
+    : bmi < 18.5
+    ? "Underweight"
+    : bmi < 25
+    ? "Normal"
+    : bmi < 30
+    ? "Overweight"
+    : "Obese";
 
   if (loading) {
     return (
@@ -402,55 +484,78 @@ const UserDashboard = () => {
           <FaArrowRight className="user-stat-arrow" />
         </div>
 
-        {/* Medical */}
-        <div
-          className="user-stat-card clickable"
-          onClick={() => navigate("/user/medical")}
-        >
-          <div className="user-stat-icon medical">
-            <FaHeartbeat />
-          </div>
+        {/* Medical & Documents */}
+{/* Medical & Documents */}
+<div
+  className="user-stat-card clickable medical-documents-card"
+  onClick={() => navigate("/user/medical")}
+>
+  <div className="user-stat-icon medical">
+    <FaHeartbeat />
+  </div>
 
-          <div className="user-stat-info">
-            <span>Medical Information</span>
+  <div className="user-stat-info">
+    <span>Medical & Documents</span>
 
-            <strong>
-              {medicalAvailable
-                ? "Available"
-                : "Not Added"}
-            </strong>
+    <div className="medical-document-stats">
 
-            <small>
-              {medicalAvailable
-                ? "Your medical information is saved"
-                : "Add your medical information"}
-            </small>
-          </div>
+       <strong>{documentsCount} </strong>
+     
 
-          <FaArrowRight className="user-stat-arrow" />
-        </div>
+      
 
-        {/* Documents */}
-        <div
-          className="user-stat-card clickable"
-          onClick={() => navigate("/user/documents")}
-        >
-          <div className="user-stat-icon documents">
-            <FaFileAlt />
-          </div>
+     
 
-          <div className="user-stat-info">
-            <span>My Documents</span>
-            <strong>{documentsCount}</strong>
-            <small>
-              {documentsCount === 1
-                ? "Document available"
-                : "Documents available"}
-            </small>
-          </div>
+      <strong className="document-label">
+        {documentsCount === 1 ? "Document" : "Documents"} {" "}
+      </strong>
 
-          <FaArrowRight className="user-stat-arrow" />
-        </div>
+       <strong>
+        {medicalAvailable ? "Available" : "Not Added"}
+      </strong>
+    </div>
+
+    <small>
+      {medicalAvailable
+        ? "Medical information & records"
+        : "Add your medical information"}
+    </small>
+  </div>
+
+  <FaArrowRight className="user-stat-arrow" />
+</div>
+
+{/* Health Snapshot */}
+<div
+  className="user-stat-card clickable health-snapshot-card"
+  onClick={() => navigate("/user/medical")}
+>
+  <div className="user-stat-icon health">
+    <FaHeartbeat />
+  </div>
+
+  <div className="user-stat-info">
+    <span>Health Snapshot</span>
+
+    <div className="health-snapshot-main">
+      <strong>
+        {bmiValue}
+      </strong>
+
+      <span>
+        {bmiStatus}
+      </span>
+    </div>
+
+    <small>
+      {medicalData?.weight && medicalData?.height
+        ? `${medicalData.weight} kg • ${medicalData.height} cm`
+        : "Add height & weight"}
+    </small>
+  </div>
+
+  <FaArrowRight className="user-stat-arrow" />
+</div>
       </section>
 
       {/* ================================================
