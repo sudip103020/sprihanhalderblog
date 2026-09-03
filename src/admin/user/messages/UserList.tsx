@@ -26,11 +26,10 @@ import {
 import {
   FaUser,
   FaComments,
-  FaSignOutAlt,
   FaEdit,
 } from "react-icons/fa";
 
-import { auth, db } from "../firebase/config";
+import { auth, db } from "../../../firebase/config";
 
 // =====================================================
 // Interfaces
@@ -375,38 +374,16 @@ const UserList = () => {
     },
   );
 
-  // =====================================================
-  // Logout
-  // =====================================================
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-
-      navigate("/admin/login", {
-        replace: true,
-      });
-    } catch (logoutError) {
-      console.error(
-        "Logout error:",
-        logoutError,
-      );
-
-      setError(
-        "Logout failed. Please try again.",
-      );
-    }
-  };
-
+ 
   // =====================================================
   // Open Chat
   // =====================================================
 
-  const handleMessage = (
-    userId: string,
-  ) => {
-    navigate(`/messages/${userId}`);
-  };
+ const handleMessage = (
+  userId: string,
+) => {
+  navigate(`/user/messages/${userId}`);
+};
 
   // =====================================================
   // Loading
@@ -448,17 +425,7 @@ const UserList = () => {
             Top Header
         ================================================= */}
 
-        <div className="d-flex justify-content-end align-items-center mb-4">
-          <Button
-            variant="outline-danger"
-            className="rounded-pill px-4"
-            onClick={handleLogout}
-          >
-            <FaSignOutAlt className="me-2" />
-
-            Logout
-          </Button>
-        </div>
+        
 
         {/* Error */}
 
@@ -475,122 +442,9 @@ const UserList = () => {
         )}
 
         {/* =================================================
-            My Profile
-        ================================================= */}
+     
 
-        {currentUser && (
-          <Card
-            className="border-0 shadow-lg mb-5"
-            style={{
-              borderRadius: "24px",
-
-              background:
-                "linear-gradient(135deg, #1f2937 0%, #374151 100%)",
-
-              color: "#fff",
-
-              overflow: "hidden",
-            }}
-          >
-            <Card.Body className="p-4 p-md-5">
-              <div className="d-flex align-items-center flex-wrap gap-4">
-
-                {/* Profile Image */}
-
-                <div
-                  className="d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0"
-                  style={{
-                    width: "90px",
-                    height: "90px",
-                    borderRadius: "50%",
-                    background: "#fff",
-                    border:
-                      "4px solid rgba(255,255,255,0.25)",
-                    boxShadow:
-                      "0 8px 25px rgba(0,0,0,0.25)",
-                  }}
-                >
-                  {currentUser.photo ? (
-                    <img
-                      src={currentUser.photo}
-                      alt={currentUser.name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  ) : (
-                    <FaUser
-                      size={35}
-                      className="text-secondary"
-                    />
-                  )}
-                </div>
-
-                {/* Profile Info */}
-
-                <div className="flex-grow-1">
-                  <div className="d-flex align-items-center flex-wrap gap-2 mb-2">
-                    <h4 className="fw-bold mb-0">
-                      {currentUser.name}
-                    </h4>
-
-                    <Badge
-                      bg="light"
-                      text="dark"
-                      pill
-                    >
-                      You
-                    </Badge>
-                  </div>
-
-                  <p className="mb-1 opacity-75">
-                    {currentUser.email}
-                  </p>
-
-                  <small className="opacity-75">
-                    <FaUser className="me-1" />
-                    Logged in account
-                  </small>
-                </div>
-
-                {/* Actions */}
-
-                <div className="d-flex flex-wrap gap-2">
-                  <Button
-                    variant="light"
-                    className="rounded-pill px-4 fw-semibold"
-                    onClick={() =>
-                      navigate(
-                        "/user/profile",
-                      )
-                    }
-                  >
-                    <FaEdit className="me-2" />
-                    Edit Profile
-                  </Button>
-
-                  {currentUser.role ===
-                    "admin" && (
-                    <Button
-                      variant="outline-light"
-                      className="rounded-pill px-4 fw-semibold"
-                      onClick={() =>
-                        navigate(
-                          "/admin/dashboard",
-                        )
-                      }
-                    >
-                      Dashboard
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        )}
-
+  
         {/* =================================================
             Messages Header
         ================================================= */}

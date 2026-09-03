@@ -30,6 +30,7 @@ import {
   FaBlog,
   FaUserPlus,
   FaComments,
+  FaUser,
 } from "react-icons/fa";
 
 import {
@@ -662,7 +663,7 @@ const Dashboard = () => {
             <div className="d-flex align-items-center">
               <div>
                 <small className="fw-bold mb-0">
-                  Welcome ! Sprihan Halder
+                  Welcome ! Sprihan Halder's Blogs 
                 </small>
               </div>
             </div>
@@ -672,15 +673,16 @@ const Dashboard = () => {
             <div className="d-flex align-items-center gap-2">
               {/* Messages */}
 
+
               <Button
                 variant="light"
                 className="dashboard-header-btn"
                 onClick={() =>
-                  navigate("/users")
+                  navigate("/user/dashboard")
                 }
                 title="Messages"
               >
-                <FaComments />
+                <FaUser />
               </Button>
 
               {/* Profile */}

@@ -44,7 +44,7 @@ import {
 import EmojiPicker from "emoji-picker-react";
 import type { EmojiClickData } from "emoji-picker-react";
 
-import { auth, db } from "../firebase/config";
+import { auth, db } from "../../../firebase/config";
 
 interface Message {
   id: string;
@@ -722,7 +722,7 @@ const Chat = () => {
         <Button
           variant="dark"
           onClick={() =>
-            navigate("/users")
+            navigate("/user/messages")
           }
         >
           <FaArrowLeft className="me-2" />
@@ -784,7 +784,7 @@ const Chat = () => {
                 height: "44px",
               }}
               onClick={() =>
-                navigate("/users")
+                navigate("/user/messages")
               }
             >
               <FaArrowLeft />

@@ -28,14 +28,18 @@ import UserRegister from "../admin/UserRegister";
 import FamilyMembers from "../admin/FamilyMembers";
 import GiftCorner from "../admin/GiftCorner";
 
-import UserList from "../admin/UserList";
 import UserProtectedRoute from "../admin/UserProtectedRoute";
 
-import Chat from "../admin/Chat";
 
-import UserProfile from "../admin/UserProfile";
+
+
+import UserDashboard from "../admin/user/dashboard/UserDashboard";
+import Adminuser from "../admin/user/messages/UserList";
+import Chat from "../admin/user/messages/Chat";
+import AdminuserProfile from "../admin/user/profile/UserProfile";
 
 import ProtectedRoute from "../admin/ProtectedRoute";
+import UserLayout from "../admin/user/components/UserLayout";
 
 const AppRoutes = () => {
   return (
@@ -107,33 +111,57 @@ const AppRoutes = () => {
         />
 
         {/* User List */}
-        <Route
-          path="/users"
-          element={
-            <UserProtectedRoute>
-              <UserList />
-            </UserProtectedRoute>
-          }
-        />
+<Route
+  path="/user/dashboard"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <UserDashboard />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
 
-        <Route
-          path="/user/profile"
-          element={
-            <UserProtectedRoute>
-              <UserProfile />
-            </UserProtectedRoute>
-          }
-        />
+<Route
+  path="/user/messages"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <Adminuser />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
 
-        {/* Chat */}
-        <Route
-          path="/messages/:userId"
-          element={
-            <UserProtectedRoute>
-              <Chat />
-            </UserProtectedRoute>
-          }
-        />
+<Route
+  path="/user/messages/:userId"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <Chat />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+
+<Route
+  path="/user/profile"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <AdminuserProfile />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+        
+
+       
+        
+
+       
 
         {/* =========================
             MEMORIES
