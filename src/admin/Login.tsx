@@ -23,7 +23,14 @@ import {
   
 } from "react-icons/fa";
 
-import { auth } from "../firebase/config";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+
+import { auth, db } from "../firebase/config";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -36,53 +43,115 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
-    e.preventDefault();
+  e: React.FormEvent<HTMLFormElement>
+) => {
+  e.preventDefault();
 
-    setError("");
-    setLoading(true);
+  setError("");
+  setLoading(true);
 
-    try {
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
+  try {
+    // Firebase Authentication Login
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const firebaseUser = userCredential.user;
+
+    // Firestore থেকে user data আনবে
+    const userQuery = query(
+      collection(db, "users"),
+      where("uid", "==", firebaseUser.uid)
+    );
+
+    const userSnapshot = await getDocs(userQuery);
+
+    if (userSnapshot.empty) {
+      setError(
+        "User profile not found. Please contact administrator."
       );
 
-      navigate("/admin/dashboard");
-    } catch (error: any) {
-      console.error(error);
-
-      switch (error.code) {
-        case "auth/invalid-credential":
-          setError("Invalid email or password.");
-          break;
-
-        case "auth/user-not-found":
-          setError("No account found with this email.");
-          break;
-
-        case "auth/wrong-password":
-          setError("Incorrect password.");
-          break;
-
-        case "auth/too-many-requests":
-          setError(
-            "Too many attempts. Please try again later."
-          );
-          break;
-
-        default:
-          setError(
-            "Login failed. Please check your details and try again."
-          );
-      }
-    } finally {
-      setLoading(false);
+      await auth.signOut();
+      return;
     }
-  };
 
+    const userData = userSnapshot.docs[0].data();
+
+    const role = userData.role?.toLowerCase();
+
+    // LocalStorage এ user data save
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        uid: firebaseUser.uid,
+        name:
+          userData.name ||
+          firebaseUser.displayName ||
+          "User",
+        email: firebaseUser.email,
+        photo:
+          userData.photo ||
+          firebaseUser.photoURL ||
+          "",
+        role: role,
+        phone: userData.phone || "",
+        designation: userData.designation || "",
+      })
+    );
+
+    // =========================
+    // ROLE BASED REDIRECT
+    // =========================
+
+    if (role === "admin") {
+      navigate("/admin/dashboard", {
+        replace: true,
+      });
+    } else if (role === "user") {
+      navigate("/user/dashboard", {
+        replace: true,
+      });
+    } else {
+      setError(
+        "Your account role is not configured. Please contact administrator."
+      );
+
+      await auth.signOut();
+      localStorage.removeItem("user");
+    }
+  } catch (error: any) {
+    console.error(error);
+
+    switch (error.code) {
+      case "auth/invalid-credential":
+        setError("Invalid email or password.");
+        break;
+
+      case "auth/user-not-found":
+        setError("No account found with this email.");
+        break;
+
+      case "auth/wrong-password":
+        setError("Incorrect password.");
+        break;
+
+      case "auth/too-many-requests":
+        setError(
+          "Too many attempts. Please try again later."
+        );
+        break;
+
+      default:
+        setError(
+          "Login failed. Please check your details and try again."
+        );
+    }
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div
       className="min-vh-100 d-flex align-items-center justify-content-center"
