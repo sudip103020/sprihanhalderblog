@@ -17,8 +17,6 @@ import {
   FaLock,
   FaEnvelope,
   FaBaby,
-  FaEye,
-  FaEyeSlash,
   FaArrowRight,
   
 } from "react-icons/fa";
