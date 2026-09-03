@@ -9,7 +9,7 @@ import {
 
 import {
   onAuthStateChanged,
-  signOut,
+ 
 } from "firebase/auth";
 
 import { useNavigate } from "react-router-dom";
@@ -26,7 +26,6 @@ import {
 import {
   FaUser,
   FaComments,
-  FaEdit,
 } from "react-icons/fa";
 
 import { auth, db } from "../../../firebase/config";

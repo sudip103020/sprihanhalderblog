@@ -29,7 +29,6 @@ import {
   FaCamera,
   FaBlog,
   FaUserPlus,
-  FaComments,
   FaUser,
 } from "react-icons/fa";
 
