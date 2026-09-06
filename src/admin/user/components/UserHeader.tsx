@@ -2,9 +2,12 @@ import {
   FaBars,
   FaBell,
   FaUser,
+  FaSignOutAlt,
 } from "react-icons/fa";
 
 import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../../../firebase/config";
 
 interface UserHeaderProps {
   onMenuClick: () => void;
@@ -19,22 +22,41 @@ const UserHeader = ({
   // Current User
   // =====================================================
 
-  const firebaseUser =
-    JSON.parse(
-      localStorage.getItem("user") || "null",
-    );
+  const firebaseUser = JSON.parse(
+    localStorage.getItem("user") || "null"
+  );
 
   const userName =
-    firebaseUser?.name ||
-    "User";
+    firebaseUser?.name || "User";
 
   const userPhoto =
-    firebaseUser?.photo ||
-    "";
+    firebaseUser?.photo || "";
+
+  // =====================================================
+  // Logout
+  // =====================================================
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+
+      localStorage.removeItem("user");
+
+      navigate("/admin/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <header className="user-header">
+
+      {/* =================================================
+          Left Side
+      ================================================= */}
+
       <div className="user-header-left">
+
         {/* Mobile Menu */}
 
         <button
@@ -46,17 +68,6 @@ const UserHeader = ({
           <FaBars />
         </button>
 
-        {/* Page Brand */}
-
-        <div className="user-header-title-area">
-          <h5 className="user-header-title">
-            User Portal
-          </h5>
-
-          <span className="user-header-subtitle">
-            Manage your account
-          </span>
-        </div>
       </div>
 
       {/* =================================================
@@ -64,6 +75,7 @@ const UserHeader = ({
       ================================================= */}
 
       <div className="user-header-right">
+
         {/* Notification */}
 
         <button
@@ -104,6 +116,7 @@ const UserHeader = ({
           </div>
 
           <div className="user-header-user-info">
+
             <span className="user-header-user-name">
               {userName}
             </span>
@@ -111,8 +124,24 @@ const UserHeader = ({
             <span className="user-header-user-role">
               User
             </span>
+
           </div>
         </button>
+
+        {/* Logout */}
+
+        <button
+          type="button"
+          className="user-header-logout-button"
+          onClick={handleLogout}
+          aria-label="Logout"
+          title="Logout"
+        >
+          <FaSignOutAlt />
+
+          <span>Logout</span>
+        </button>
+
       </div>
     </header>
   );

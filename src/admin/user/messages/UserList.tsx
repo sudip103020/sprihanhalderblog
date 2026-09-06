@@ -26,6 +26,7 @@ import {
 import {
   FaUser,
   FaComments,
+    FaArrowLeft,
 } from "react-icons/fa";
 
 import { auth, db } from "../../../firebase/config";
@@ -448,24 +449,63 @@ const UserList = () => {
             Messages Header
         ================================================= */}
 
-        <div className="d-flex justify-content-between align-items-end mb-3">
-          <div>
-            <div className="d-flex align-items-center gap-2">
-              <h4 className="fw-bold mb-1">
-                Users
-              </h4>
+        {/* =================================================
+    BACK HEADER
+================================================= */}
 
-              <Badge
-                bg="dark"
-                pill
-              >
-                {users.length}
-              </Badge>
-            </div>
+<div className="d-flex align-items-center mb-4">
+  <Button
+    variant="light"
+    className="rounded-circle me-3 shadow-sm"
+    style={{
+      width: "42px",
+      height: "42px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+    onClick={() => navigate("/user/dashboard")}
+  >
+    <FaArrowLeft />
+  </Button>
 
-          
-          </div>
-        </div>
+  <div>
+    <h3 className="fw-bold mb-1">
+      Messages
+    </h3>
+
+    <p className="text-muted mb-0">
+      Connect and chat with other users
+    </p>
+  </div>
+</div>
+
+{/* Error */}
+{error && (
+  <Alert
+    variant="danger"
+    dismissible
+    onClose={() => setError("")}
+  >
+    {error}
+  </Alert>
+)}
+
+{/* =================================================
+    USERS HEADER
+================================================= */}
+
+<div className="d-flex align-items-center gap-2 mb-3">
+  <h4 className="fw-bold mb-0">
+    Users
+  </h4>
+
+  <Badge bg="dark" pill>
+    {users.length}
+  </Badge>
+</div>
+
+      
 
         {/* =================================================
             User List

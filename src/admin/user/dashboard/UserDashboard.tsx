@@ -387,12 +387,12 @@ const bmiStatus =
 
           <div className="user-welcome-text">
             <span className="user-welcome-small">
-              Welcome back 👋
+              Welcome 👋
             </span>
 
             <h1>
               Hello, {firstName}!
-            </h1>
+            </h1> 
 
             <p>
               Manage your profile, messages, medical

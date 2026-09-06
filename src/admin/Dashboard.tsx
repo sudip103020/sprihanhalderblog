@@ -97,7 +97,7 @@ const Dashboard = () => {
   const [profileLoading, setProfileLoading] = useState(true);
 
   const [profileName, setProfileName] = useState("Admin");
-  const [profileEmail, setProfileEmail] = useState("");
+
   const [profilePhoto, setProfilePhoto] = useState("");
 
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -121,7 +121,7 @@ const Dashboard = () => {
         return;
       }
 
-      setProfileEmail(user.email || "");
+      
 
       try {
         const userRef = doc(db, "users", user.uid);
@@ -1066,7 +1066,7 @@ const Dashboard = () => {
             </div>
 
             <small className="text-muted">
-              {profileEmail}
+            
             </small>
           </div>
 

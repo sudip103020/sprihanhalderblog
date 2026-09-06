@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
+
 import {
   FaHome,
   FaComments,
@@ -31,7 +32,7 @@ const UserSidebar = ({
   // Current User
   // =====================================================
 
-  const firebaseUser = auth.currentUser;
+ 
 
   let storedUser: any = null;
 
@@ -48,20 +49,6 @@ const UserSidebar = ({
     );
   }
 
-  const userName =
-    storedUser?.name ||
-    firebaseUser?.displayName ||
-    "User";
-
-  const userEmail =
-    storedUser?.email ||
-    firebaseUser?.email ||
-    "";
-
-  const userPhoto =
-    storedUser?.photo ||
-    firebaseUser?.photoURL ||
-    "";
 
   const userRole =
     storedUser?.role ||
@@ -161,17 +148,21 @@ const UserSidebar = ({
         ================================================= */}
 
         <div className="user-sidebar-brand">
-          <div className="user-brand-icon">
-            <FaUser />
+          <div>
+            <img
+     src="/logo.png"
+    alt="Logo"
+    className="user-header-logo"
+  />
           </div>
 
           <div className="user-brand-text">
             <div className="user-brand-title">
-              User Portal
+              Your Portal
             </div>
 
             <div className="user-brand-subtitle">
-              Personal Space
+             Provide By Sprihan Blog
             </div>
           </div>
 
@@ -187,40 +178,8 @@ const UserSidebar = ({
           </button>
         </div>
 
-        {/* =================================================
-            User Mini Profile
-        ================================================= */}
 
-        <div className="user-sidebar-profile">
-          <div className="user-sidebar-avatar">
-            {userPhoto ? (
-              <img
-                src={userPhoto}
-                alt={userName}
-              />
-            ) : (
-              <FaUser />
-            )}
-          </div>
-
-          <div className="user-sidebar-profile-info">
-            <div className="user-sidebar-name">
-              {userName}
-            </div>
-
-            <div className="user-sidebar-email">
-              {userEmail || "Welcome back"}
-            </div>
-          </div>
-        </div>
-
-        {/* =================================================
-            Navigation
-        ================================================= */}
-
-        <div className="user-sidebar-section-title">
-          MENU
-        </div>
+  
 
         <nav className="user-sidebar-nav">
           {menuItems.map((item) => (
