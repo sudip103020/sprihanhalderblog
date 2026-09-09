@@ -40,9 +40,19 @@ import AdminuserProfile from "../admin/user/profile/UserProfile";
 import UserSettings from "../admin/user/settings/UserSettings";
 import ChangePassword from "../admin/user/settings/ChangePassword";
 import Medical from "../admin/user/medical/Medical";
+import Diary from "../admin/user/Diary/Diary";
+import DiaryDetails from "../admin/user/Diary/DiaryDetails";
+import DiaryBooks from "../admin/user/Diary/DiaryBooks";
+import AddDiaryBook from "../admin/user/Diary/AddDiaryBook";
+import AddDiaryPage from "../admin/user/Diary/AddDiaryPage";
+import DiaryBookDetails from "../admin/user/Diary/DiaryBookDetails";
+
+
+
 
 import ProtectedRoute from "../admin/ProtectedRoute";
 import UserLayout from "../admin/user/components/UserLayout";
+import DiaryList from "../admin/user/Diary/DiaryList";
 
 const AppRoutes = () => {
   return (
@@ -191,7 +201,110 @@ const AppRoutes = () => {
     </UserProtectedRoute>
   }
 />
+
         
+      
+{/* =========================
+    OLD DIARY SYSTEM
+========================== */}
+
+<Route
+  path="/user/diary"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <DiaryList />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+<Route
+  path="/user/diary/add"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <Diary />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+<Route
+  path="/user/diary/edit/:id"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <Diary />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+<Route
+  path="/user/diary/:id"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <DiaryDetails />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+
+{/* =========================
+    NEW DIARY BOOK SYSTEM
+========================== */}
+
+<Route
+  path="/user/diary/book"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <DiaryBooks />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+<Route
+  path="/user/diary/book/add"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <AddDiaryBook />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+<Route
+  path="/user/diary/book/:bookId"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <DiaryBookDetails />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+<Route
+  path="/user/diary/book/:bookId/page/add"
+  element={
+    <UserProtectedRoute>
+      <UserLayout>
+        <AddDiaryPage />
+      </UserLayout>
+    </UserProtectedRoute>
+  }
+/>
+
+
+
+
+
 
        
 

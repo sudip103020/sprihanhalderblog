@@ -114,6 +114,20 @@ const UserSidebar = ({
       path: "/user/profile",
       icon: <FaUser />,
     },
+
+     {
+      label: "My Diary",
+      path: "/user/diary",
+      icon: <FaUser />,
+    },
+
+     {
+      label: "My Books",
+      path: "/user/diary/book",
+      icon: <FaUser />,
+    },
+
+
     {
       label: "Settings",
       path: "/user/settings",
