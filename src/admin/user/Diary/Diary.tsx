@@ -21,6 +21,7 @@ import {
   FiUpload,
 } from "react-icons/fi";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { migrateDiariesToDiaryPages } from "../migrateDiariesToDiaryPages";
 
 import {
   addDoc,
@@ -590,6 +591,14 @@ const Diary = () => {
 
           Back to Diary
         </Button>
+
+        <Button
+  onClick={async () => {
+    await migrateDiariesToDiaryPages();
+  }}
+>
+  Migrate Diaries
+</Button>
 
       </div>
 

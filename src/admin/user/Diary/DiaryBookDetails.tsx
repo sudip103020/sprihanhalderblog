@@ -2,15 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { FiDownload } from "react-icons/fi";
+
 import {
   Alert,
-  
   Button,
- 
-  
   Container,
   Modal,
-
   Spinner,
 } from "react-bootstrap";
 
@@ -81,14 +78,31 @@ const DiaryBookDetails = () => {
   const [success, setSuccess] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedPage, setSelectedPage] = useState<DiaryPage | null>(null);
+  const [selectedPage, setSelectedPage] =
+    useState<DiaryPage | null>(null);
 
   const [showBook, setShowBook] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
 
   const [showContents, setShowContents] = useState(false);
 
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] =
+    useState<string | null>(null);
+
+  /*
+   * ==========================================
+   * DRAG & DROP STATES
+   * ==========================================
+   */
+
+  const [draggedPageId, setDraggedPageId] =
+    useState<string | null>(null);
+
+  const [dragOverPageId, setDragOverPageId] =
+    useState<string | null>(null);
+
+  const [savingPageOrder, setSavingPageOrder] =
+    useState(false);
 
   /*
    * ==========================================
@@ -107,9 +121,11 @@ const DiaryBookDetails = () => {
       setLoading(true);
       setError("");
 
-      // -----------------------------
-      // Load Book
-      // -----------------------------
+      /*
+       * ----------------------------------------
+       * Load Book
+       * ----------------------------------------
+       */
 
       const bookRef = doc(db, "diaryBooks", bookId);
       const bookSnap = await getDoc(bookRef);
@@ -131,15 +147,20 @@ const DiaryBookDetails = () => {
         author: bookData.author || "",
         startDate: bookData.startDate || "",
         endDate: bookData.endDate || "",
-        status: bookData.status || "draft",
+        status:
+          bookData.status === "published"
+            ? "published"
+            : "draft",
         pageCount: Number(bookData.pageCount || 0),
       };
 
       setBook(loadedBook);
 
-      // -----------------------------
-      // Load Pages
-      // -----------------------------
+      /*
+       * ----------------------------------------
+       * Load Pages
+       * ----------------------------------------
+       */
 
       const pagesQuery = query(
         collection(db, "diaryPages"),
@@ -159,18 +180,27 @@ const DiaryBookDetails = () => {
             title: data.title || "",
             date: data.date || "",
             content: data.content || "",
-            images: Array.isArray(data.images) ? data.images : [],
+            images: Array.isArray(data.images)
+              ? data.images
+              : [],
           };
         })
-        .sort((a, b) => a.pageNumber - b.pageNumber);
+        .sort(
+          (a, b) => a.pageNumber - b.pageNumber
+        );
 
       setPages(loadedPages);
 
       if (loadedPages.length > 0) {
         setCurrentPage(0);
+      } else {
+        setCurrentPage(0);
       }
     } catch (err) {
-      console.error("Diary book loading error:", err);
+      console.error(
+        "Diary book loading error:",
+        err
+      );
 
       const message =
         err instanceof Error
@@ -196,7 +226,159 @@ const DiaryBookDetails = () => {
   const handleAddPage = () => {
     if (!bookId) return;
 
-    navigate(`/user/diary/book/${bookId}/page/add`);
+    navigate(
+      `/user/diary/book/${bookId}/page/add`
+    );
+  };
+
+  /*
+   * ==========================================
+   * DRAG & DROP PAGE REORDER
+   * ==========================================
+   */
+
+  const startPageDrag = (
+    event: React.DragEvent<HTMLDivElement>,
+    pageId: string
+  ) => {
+    setDraggedPageId(pageId);
+    setDragOverPageId(null);
+
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData(
+      "text/plain",
+      pageId
+    );
+  };
+
+  const handlePageDragOver = (
+    event: React.DragEvent<HTMLDivElement>,
+    pageId: string
+  ) => {
+    event.preventDefault();
+
+    event.dataTransfer.dropEffect = "move";
+
+    if (pageId !== draggedPageId) {
+      setDragOverPageId(pageId);
+    }
+  };
+
+  const handlePageDrop = (
+    event: React.DragEvent<HTMLDivElement>,
+    targetPageId: string
+  ) => {
+    event.preventDefault();
+
+    const sourcePageId =
+      event.dataTransfer.getData("text/plain") ||
+      draggedPageId;
+
+    if (
+      !sourcePageId ||
+      sourcePageId === targetPageId
+    ) {
+      setDraggedPageId(null);
+      setDragOverPageId(null);
+      return;
+    }
+
+    const sourceIndex = pages.findIndex(
+      (page) => page.id === sourcePageId
+    );
+
+    if (sourceIndex === -1) {
+      setDraggedPageId(null);
+      setDragOverPageId(null);
+      return;
+    }
+
+    /*
+     * Copy current pages
+     */
+
+    const updatedPages = [...pages];
+
+    /*
+     * Remove dragged page first.
+     */
+
+    const [movedPage] =
+      updatedPages.splice(
+        sourceIndex,
+        1
+      );
+
+    /*
+     * Find target AFTER removing
+     * dragged page.
+     */
+
+    const targetIndex =
+      updatedPages.findIndex(
+        (page) =>
+          page.id === targetPageId
+      );
+
+    if (targetIndex === -1) {
+      setDraggedPageId(null);
+      setDragOverPageId(null);
+      return;
+    }
+
+    /*
+     * Insert dragged page before target.
+     */
+
+    updatedPages.splice(
+      targetIndex,
+      0,
+      movedPage
+    );
+
+    /*
+     * Re-number locally.
+     */
+
+    const numberedPages =
+      updatedPages.map(
+        (page, index) => ({
+          ...page,
+          pageNumber: index + 1,
+        })
+      );
+
+    setPages(numberedPages);
+
+    /*
+     * Keep currently opened page
+     * selected after reorder.
+     */
+
+    const activePageId =
+      activePage?.id;
+
+    if (activePageId) {
+      const newCurrentIndex =
+        numberedPages.findIndex(
+          (page) =>
+            page.id === activePageId
+        );
+
+      if (newCurrentIndex !== -1) {
+        setCurrentPage(
+          newCurrentIndex
+        );
+      }
+    }
+
+    setDraggedPageId(null);
+    setDragOverPageId(null);
+  };
+
+  const handlePageDragEnd = () => {
+    setDraggedPageId(null);
+    setDragOverPageId(null);
   };
 
   /*
@@ -208,7 +390,9 @@ const DiaryBookDetails = () => {
   const handleEditBook = () => {
     if (!book) return;
 
-    navigate(`/user/diary/book/add?edit=${book.id}`);
+    navigate(
+      `/user/diary/book/add?edit=${book.id}`
+    );
   };
 
   /*
@@ -217,10 +401,14 @@ const DiaryBookDetails = () => {
    * ==========================================
    */
 
-  const handleEditPage = (page: DiaryPage) => {
+  const handleEditPage = (
+    page: DiaryPage
+  ) => {
     if (!bookId) return;
 
-    navigate(`/user/diary/book/${bookId}/page/add?edit=${page.id}`);
+    navigate(
+      `/user/diary/book/${bookId}/page/add?edit=${page.id}`
+    );
   };
 
   /*
@@ -229,7 +417,9 @@ const DiaryBookDetails = () => {
    * ==========================================
    */
 
-  const handleAskDelete = (page: DiaryPage) => {
+  const handleAskDelete = (
+    page: DiaryPage
+  ) => {
     setSelectedPage(page);
     setShowDeleteModal(true);
   };
@@ -241,7 +431,9 @@ const DiaryBookDetails = () => {
    */
 
   const handleDeletePage = async () => {
-    if (!bookId || !selectedPage) return;
+    if (!bookId || !selectedPage) {
+      return;
+    }
 
     try {
       setDeletingPage(true);
@@ -253,52 +445,99 @@ const DiaryBookDetails = () => {
         where("bookId", "==", bookId)
       );
 
-      const pagesSnapshot = await getDocs(pagesQuery);
+      const pagesSnapshot =
+        await getDocs(pagesQuery);
 
-      const remainingPages = pagesSnapshot.docs
-        .filter((pageDoc) => pageDoc.id !== selectedPage.id)
-        .map((pageDoc) => ({
-          id: pageDoc.id,
-          ref: pageDoc.ref,
-          data: pageDoc.data(),
-          pageNumber: Number(pageDoc.data().pageNumber || 0),
-        }))
-        .sort((a, b) => a.pageNumber - b.pageNumber);
+      const remainingPages =
+        pagesSnapshot.docs
+          .filter(
+            (pageDoc) =>
+              pageDoc.id !==
+              selectedPage.id
+          )
+          .map((pageDoc) => ({
+            id: pageDoc.id,
+            ref: pageDoc.ref,
+            data: pageDoc.data(),
+            pageNumber: Number(
+              pageDoc.data().pageNumber ||
+                0
+            ),
+          }))
+          .sort(
+            (a, b) =>
+              a.pageNumber -
+              b.pageNumber
+          );
 
       const batch = writeBatch(db);
 
-      // Delete selected page
-      batch.delete(doc(db, "diaryPages", selectedPage.id));
+      /*
+       * Delete selected page
+       */
 
-      // Renumber pages
-      remainingPages.forEach((page, index) => {
-        batch.update(page.ref, {
-          pageNumber: index + 1,
-          updatedAt: serverTimestamp(),
-        });
-      });
+      batch.delete(
+        doc(
+          db,
+          "diaryPages",
+          selectedPage.id
+        )
+      );
 
-      // Update book page count
-      batch.update(doc(db, "diaryBooks", bookId), {
-        pageCount: remainingPages.length,
-        updatedAt: serverTimestamp(),
-      });
+      /*
+       * Renumber remaining pages
+       */
+
+      remainingPages.forEach(
+        (page, index) => {
+          batch.update(page.ref, {
+            pageNumber: index + 1,
+            updatedAt:
+              serverTimestamp(),
+          });
+        }
+      );
+
+      /*
+       * Update book page count
+       */
+
+      batch.update(
+        doc(
+          db,
+          "diaryBooks",
+          bookId
+        ),
+        {
+          pageCount:
+            remainingPages.length,
+          updatedAt:
+            serverTimestamp(),
+        }
+      );
 
       await batch.commit();
 
-      const updatedPages: DiaryPage[] = remainingPages.map(
-        (page, index) => ({
-          id: page.id,
-          bookId,
-          pageNumber: index + 1,
-          title: page.data.title || "",
-          date: page.data.date || "",
-          content: page.data.content || "",
-          images: Array.isArray(page.data.images)
-            ? page.data.images
-            : [],
-        })
-      );
+      const updatedPages: DiaryPage[] =
+        remainingPages.map(
+          (page, index) => ({
+            id: page.id,
+            bookId,
+            pageNumber: index + 1,
+            title:
+              page.data.title || "",
+            date:
+              page.data.date || "",
+            content:
+              page.data.content || "",
+            images:
+              Array.isArray(
+                page.data.images
+              )
+                ? page.data.images
+                : [],
+          })
+        );
 
       setPages(updatedPages);
 
@@ -306,35 +545,54 @@ const DiaryBookDetails = () => {
         previous
           ? {
               ...previous,
-              pageCount: updatedPages.length,
+              pageCount:
+                updatedPages.length,
             }
           : previous
       );
 
-      // Keep current page valid
+      /*
+       * Keep current page valid
+       */
+
       if (updatedPages.length === 0) {
         setCurrentPage(0);
-      } else if (currentPage >= updatedPages.length) {
-        setCurrentPage(updatedPages.length - 1);
       } else if (
-        selectedPage.pageNumber - 1 <= currentPage &&
+        currentPage >=
+        updatedPages.length
+      ) {
+        setCurrentPage(
+          updatedPages.length - 1
+        );
+      } else if (
+        selectedPage.pageNumber - 1 <=
+          currentPage &&
         currentPage > 0
       ) {
-        setCurrentPage((previous) =>
-          Math.max(0, previous - 1)
+        setCurrentPage(
+          (previous) =>
+            Math.max(
+              0,
+              previous - 1
+            )
         );
       }
 
       setShowDeleteModal(false);
       setSelectedPage(null);
 
-      setSuccess("Diary page সফলভাবে delete হয়েছে।");
+      setSuccess(
+        "Diary page সফলভাবে delete হয়েছে।"
+      );
 
       setTimeout(() => {
         setSuccess("");
       }, 2500);
     } catch (err) {
-      console.error("Diary page delete error:", err);
+      console.error(
+        "Diary page delete error:",
+        err
+      );
 
       setError(
         err instanceof Error
@@ -355,7 +613,10 @@ const DiaryBookDetails = () => {
   const dateRange = useMemo(() => {
     if (!book) return "";
 
-    if (book.startDate && book.endDate) {
+    if (
+      book.startDate &&
+      book.endDate
+    ) {
       return `${book.startDate} → ${book.endDate}`;
     }
 
@@ -370,334 +631,616 @@ const DiaryBookDetails = () => {
     return "Date not set";
   }, [book]);
 
-  const exportDiaryToPDF = async () => {
-  if (!book || pages.length === 0) {
-    alert("There are no diary pages to export.");
-    return;
-  }
+  /*
+   * ==========================================
+   * EXPORT DIARY TO PDF
+   * ==========================================
+   */
 
-  try {
-    setLoading(true);
-
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-
-    const pdfWidth = 210;
-    const pdfHeight = 297;
-
-    // Temporary PDF container
-    const pdfContainer = document.createElement("div");
-
-    pdfContainer.style.position = "fixed";
-    pdfContainer.style.left = "-100000px";
-    pdfContainer.style.top = "0";
-    pdfContainer.style.width = "794px";
-    pdfContainer.style.background = "#f5efe4";
-    pdfContainer.style.padding = "0";
-    pdfContainer.style.zIndex = "-9999";
-
-    document.body.appendChild(pdfContainer);
-
-    // =========================
-    // COVER PAGE
-    // =========================
-
-    const cover = document.createElement("div");
-
-    cover.style.width = "794px";
-    cover.style.height = "1123px";
-    cover.style.background = "#1f1b18";
-    cover.style.color = "#f5e9d3";
-    cover.style.display = "flex";
-    cover.style.flexDirection = "column";
-    cover.style.alignItems = "center";
-    cover.style.justifyContent = "center";
-    cover.style.textAlign = "center";
-    cover.style.padding = "80px";
-    cover.style.boxSizing = "border-box";
-    cover.style.fontFamily = "Georgia, serif";
-
-    if (book.coverImage) {
-      const coverImg = document.createElement("img");
-
-      coverImg.src = book.coverImage;
-
-      coverImg.style.width = "520px";
-      coverImg.style.height = "320px";
-      coverImg.style.objectFit = "cover";
-      coverImg.style.borderRadius = "8px";
-      coverImg.style.marginBottom = "60px";
-
-      cover.appendChild(coverImg);
-
-      await new Promise<void>((resolve) => {
-        coverImg.onload = () => resolve();
-        coverImg.onerror = () => resolve();
-      });
-    }
-
-    const coverSmall = document.createElement("div");
-
-    coverSmall.innerText = "PERSONAL DIARY";
-
-    coverSmall.style.fontSize = "18px";
-    coverSmall.style.letterSpacing = "8px";
-    coverSmall.style.marginBottom = "30px";
-    coverSmall.style.opacity = "0.8";
-
-    cover.appendChild(coverSmall);
-
-    const coverTitle = document.createElement("div");
-
-    coverTitle.innerText = book.title;
-
-    coverTitle.style.fontSize = "48px";
-    coverTitle.style.fontWeight = "bold";
-    coverTitle.style.marginBottom = "25px";
-    coverTitle.style.lineHeight = "1.2";
-
-    cover.appendChild(coverTitle);
-
-    if (book.description) {
-      const description = document.createElement("div");
-
-      description.innerText = book.description;
-
-      description.style.fontSize = "20px";
-      description.style.lineHeight = "1.7";
-      description.style.maxWidth = "600px";
-      description.style.opacity = "0.8";
-      description.style.marginBottom = "50px";
-
-      cover.appendChild(description);
-    }
-
-    const author = document.createElement("div");
-
-    author.innerText = `By ${book.author || "Me"}`;
-
-    author.style.fontSize = "20px";
-    author.style.marginBottom = "15px";
-
-    cover.appendChild(author);
-
-    const dates = document.createElement("div");
-
-    dates.innerText = `${book.startDate || ""} ${
-      book.endDate ? `— ${book.endDate}` : ""
-    }`;
-
-    dates.style.fontSize = "16px";
-    dates.style.opacity = "0.7";
-
-    cover.appendChild(dates);
-
-    pdfContainer.appendChild(cover);
-
-    const coverCanvas = await html2canvas(cover, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#1f1b18",
-      logging: false,
-    });
-
-    const coverImage = coverCanvas.toDataURL("image/jpeg", 0.95);
-
-    pdf.addImage(
-      coverImage,
-      "JPEG",
-      0,
-      0,
-      pdfWidth,
-      pdfHeight
-    );
-
-    // =========================
-    // DIARY PAGES
-    // =========================
-
-    for (let i = 0; i < pages.length; i++) {
-      const page = pages[i];
-
-      const pageElement = document.createElement("div");
-
-      pageElement.style.width = "794px";
-      pageElement.style.minHeight = "1123px";
-      pageElement.style.background = "#fdf8ee";
-      pageElement.style.color = "#302820";
-      pageElement.style.padding = "75px 70px";
-      pageElement.style.boxSizing = "border-box";
-      pageElement.style.fontFamily = "Georgia, serif";
-      pageElement.style.position = "relative";
-
-      // Page header
-      const header = document.createElement("div");
-
-      header.style.display = "flex";
-      header.style.justifyContent = "space-between";
-      header.style.alignItems = "center";
-      header.style.borderBottom = "1px solid #d8cbb8";
-      header.style.paddingBottom = "18px";
-      header.style.marginBottom = "40px";
-
-      const diaryName = document.createElement("div");
-
-      diaryName.innerText = book.title;
-
-      diaryName.style.fontSize = "15px";
-      diaryName.style.letterSpacing = "2px";
-      diaryName.style.opacity = "0.6";
-
-      header.appendChild(diaryName);
-
-      const pageDate = document.createElement("div");
-
-      pageDate.innerText = page.date || "";
-
-      pageDate.style.fontSize = "14px";
-      pageDate.style.opacity = "0.6";
-
-      header.appendChild(pageDate);
-
-      pageElement.appendChild(header);
-
-      // Page title
-      if (page.title) {
-        const title = document.createElement("h1");
-
-        title.innerText = page.title;
-
-        title.style.fontSize = "34px";
-        title.style.marginBottom = "30px";
-        title.style.color = "#241e19";
-        title.style.lineHeight = "1.25";
-
-        pageElement.appendChild(title);
+  const exportDiaryToPDF =
+    async () => {
+      if (
+        !book ||
+        pages.length === 0
+      ) {
+        alert(
+          "There are no diary pages to export."
+        );
+        return;
       }
 
-      // Content
-      if (page.content) {
-        const content = document.createElement("div");
+      try {
+        setLoading(true);
 
-        content.innerHTML = page.content;
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+        });
 
-        content.style.fontSize = "18px";
-        content.style.lineHeight = "1.9";
-        content.style.color = "#443b32";
-        content.style.marginBottom = "35px";
+        const pdfWidth = 210;
+        const pdfHeight = 297;
 
-        pageElement.appendChild(content);
-      }
+        /*
+         * Temporary PDF container
+         */
 
-      // Images
-      if (page.images && page.images.length > 0) {
-        const imageGrid = document.createElement("div");
+        const pdfContainer =
+          document.createElement(
+            "div"
+          );
 
-        imageGrid.style.display = "grid";
-        imageGrid.style.gridTemplateColumns =
-          page.images.length === 1
-            ? "1fr"
-            : "1fr 1fr";
+        pdfContainer.style.position =
+          "fixed";
+        pdfContainer.style.left =
+          "-100000px";
+        pdfContainer.style.top = "0";
+        pdfContainer.style.width =
+          "794px";
+        pdfContainer.style.background =
+          "#f5efe4";
+        pdfContainer.style.padding =
+          "0";
+        pdfContainer.style.zIndex =
+          "-9999";
 
-        imageGrid.style.gap = "20px";
-        imageGrid.style.marginTop = "30px";
+        document.body.appendChild(
+          pdfContainer
+        );
 
-        for (const imageUrl of page.images) {
-          const wrapper = document.createElement("div");
+        /*
+         * ====================================
+         * COVER PAGE
+         * ====================================
+         */
 
-          wrapper.style.background = "#fff";
-          wrapper.style.padding = "12px";
-          wrapper.style.border = "1px solid #ded3c4";
-          wrapper.style.boxShadow =
-            "0 8px 20px rgba(60,40,20,0.12)";
+        const cover =
+          document.createElement(
+            "div"
+          );
 
-          const img = document.createElement("img");
+        cover.style.width = "794px";
+        cover.style.height = "1123px";
+        cover.style.background =
+          "#1f1b18";
+        cover.style.color = "#f5e9d3";
+        cover.style.display = "flex";
+        cover.style.flexDirection =
+          "column";
+        cover.style.alignItems =
+          "center";
+        cover.style.justifyContent =
+          "center";
+        cover.style.textAlign =
+          "center";
+        cover.style.padding = "80px";
+        cover.style.boxSizing =
+          "border-box";
+        cover.style.fontFamily =
+          "Georgia, serif";
 
-          img.src = imageUrl;
+        if (book.coverImage) {
+          const coverImg =
+            document.createElement(
+              "img"
+            );
 
-          img.style.width = "100%";
-          img.style.height =
-            page.images.length === 1 ? "380px" : "240px";
+          coverImg.src =
+            book.coverImage;
 
-          img.style.objectFit = "cover";
-          img.style.display = "block";
+          coverImg.style.width =
+            "520px";
+          coverImg.style.height =
+            "320px";
+          coverImg.style.objectFit =
+            "cover";
+          coverImg.style.borderRadius =
+            "8px";
+          coverImg.style.marginBottom =
+            "60px";
 
-          wrapper.appendChild(img);
-          imageGrid.appendChild(wrapper);
+          cover.appendChild(
+            coverImg
+          );
 
-          await new Promise<void>((resolve) => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-          });
+          await new Promise<void>(
+            (resolve) => {
+              coverImg.onload = () =>
+                resolve();
+              coverImg.onerror = () =>
+                resolve();
+            }
+          );
         }
 
-        pageElement.appendChild(imageGrid);
+        const coverSmall =
+          document.createElement(
+            "div"
+          );
+
+        coverSmall.innerText =
+          "PERSONAL DIARY";
+
+        coverSmall.style.fontSize =
+          "18px";
+        coverSmall.style.letterSpacing =
+          "8px";
+        coverSmall.style.marginBottom =
+          "30px";
+        coverSmall.style.opacity =
+          "0.8";
+
+        cover.appendChild(
+          coverSmall
+        );
+
+        const coverTitle =
+          document.createElement(
+            "div"
+          );
+
+        coverTitle.innerText =
+          book.title;
+
+        coverTitle.style.fontSize =
+          "48px";
+        coverTitle.style.fontWeight =
+          "bold";
+        coverTitle.style.marginBottom =
+          "25px";
+        coverTitle.style.lineHeight =
+          "1.2";
+
+        cover.appendChild(
+          coverTitle
+        );
+
+        if (book.description) {
+          const description =
+            document.createElement(
+              "div"
+            );
+
+          description.innerText =
+            book.description;
+
+          description.style.fontSize =
+            "20px";
+          description.style.lineHeight =
+            "1.7";
+          description.style.maxWidth =
+            "600px";
+          description.style.opacity =
+            "0.8";
+          description.style.marginBottom =
+            "50px";
+
+          cover.appendChild(
+            description
+          );
+        }
+
+        const author =
+          document.createElement(
+            "div"
+          );
+
+        author.innerText = `By ${
+          book.author || "Me"
+        }`;
+
+        author.style.fontSize =
+          "20px";
+        author.style.marginBottom =
+          "15px";
+
+        cover.appendChild(author);
+
+        const dates =
+          document.createElement(
+            "div"
+          );
+
+        dates.innerText = `${
+          book.startDate || ""
+        } ${
+          book.endDate
+            ? `— ${book.endDate}`
+            : ""
+        }`;
+
+        dates.style.fontSize =
+          "16px";
+        dates.style.opacity =
+          "0.7";
+
+        cover.appendChild(dates);
+
+        pdfContainer.appendChild(
+          cover
+        );
+
+        const coverCanvas =
+          await html2canvas(cover, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor:
+              "#1f1b18",
+            logging: false,
+          });
+
+        const coverImage =
+          coverCanvas.toDataURL(
+            "image/jpeg",
+            0.95
+          );
+
+        pdf.addImage(
+          coverImage,
+          "JPEG",
+          0,
+          0,
+          pdfWidth,
+          pdfHeight
+        );
+
+        /*
+         * ====================================
+         * DIARY PAGES
+         * ====================================
+         */
+
+        for (
+          let i = 0;
+          i < pages.length;
+          i++
+        ) {
+          const page = pages[i];
+
+          const pageElement =
+            document.createElement(
+              "div"
+            );
+
+          pageElement.style.width =
+            "794px";
+          pageElement.style.minHeight =
+            "1123px";
+          pageElement.style.background =
+            "#fdf8ee";
+          pageElement.style.color =
+            "#302820";
+          pageElement.style.padding =
+            "75px 70px";
+          pageElement.style.boxSizing =
+            "border-box";
+          pageElement.style.fontFamily =
+            "Georgia, serif";
+          pageElement.style.position =
+            "relative";
+
+          /*
+           * Page Header
+           */
+
+          const header =
+            document.createElement(
+              "div"
+            );
+
+          header.style.display =
+            "flex";
+          header.style.justifyContent =
+            "space-between";
+          header.style.alignItems =
+            "center";
+          header.style.borderBottom =
+            "1px solid #d8cbb8";
+          header.style.paddingBottom =
+            "18px";
+          header.style.marginBottom =
+            "40px";
+
+          const diaryName =
+            document.createElement(
+              "div"
+            );
+
+          diaryName.innerText =
+            book.title;
+
+          diaryName.style.fontSize =
+            "15px";
+          diaryName.style.letterSpacing =
+            "2px";
+          diaryName.style.opacity =
+            "0.6";
+
+          header.appendChild(
+            diaryName
+          );
+
+          const pageDate =
+            document.createElement(
+              "div"
+            );
+
+          pageDate.innerText =
+            page.date || "";
+
+          pageDate.style.fontSize =
+            "14px";
+          pageDate.style.opacity =
+            "0.6";
+
+          header.appendChild(
+            pageDate
+          );
+
+          pageElement.appendChild(
+            header
+          );
+
+          /*
+           * Page Title
+           */
+
+          if (page.title) {
+            const title =
+              document.createElement(
+                "h1"
+              );
+
+            title.innerText =
+              page.title;
+
+            title.style.fontSize =
+              "34px";
+            title.style.marginBottom =
+              "30px";
+            title.style.color =
+              "#241e19";
+            title.style.lineHeight =
+              "1.25";
+
+            pageElement.appendChild(
+              title
+            );
+          }
+
+          /*
+           * Content
+           */
+
+          if (page.content) {
+            const content =
+              document.createElement(
+                "div"
+              );
+
+            content.innerHTML =
+              page.content;
+
+            content.style.fontSize =
+              "18px";
+            content.style.lineHeight =
+              "1.9";
+            content.style.color =
+              "#443b32";
+            content.style.marginBottom =
+              "35px";
+
+            pageElement.appendChild(
+              content
+            );
+          }
+
+          /*
+           * Images
+           */
+
+          if (
+            page.images &&
+            page.images.length > 0
+          ) {
+            const imageGrid =
+              document.createElement(
+                "div"
+              );
+
+            imageGrid.style.display =
+              "grid";
+
+            imageGrid.style.gridTemplateColumns =
+              page.images.length === 1
+                ? "1fr"
+                : "1fr 1fr";
+
+            imageGrid.style.gap =
+              "20px";
+
+            imageGrid.style.marginTop =
+              "30px";
+
+            for (
+              const imageUrl of page.images
+            ) {
+              const wrapper =
+                document.createElement(
+                  "div"
+                );
+
+              wrapper.style.background =
+                "#fff";
+
+              wrapper.style.padding =
+                "12px";
+
+              wrapper.style.border =
+                "1px solid #ded3c4";
+
+              wrapper.style.boxShadow =
+                "0 8px 20px rgba(60,40,20,0.12)";
+
+              const img =
+                document.createElement(
+                  "img"
+                );
+
+              img.src = imageUrl;
+
+              img.style.width =
+                "100%";
+
+              img.style.height =
+                page.images.length ===
+                1
+                  ? "380px"
+                  : "240px";
+
+              img.style.objectFit =
+                "cover";
+
+              img.style.display =
+                "block";
+
+              wrapper.appendChild(
+                img
+              );
+
+              imageGrid.appendChild(
+                wrapper
+              );
+
+              await new Promise<void>(
+                (resolve) => {
+                  img.onload = () =>
+                    resolve();
+                  img.onerror = () =>
+                    resolve();
+                }
+              );
+            }
+
+            pageElement.appendChild(
+              imageGrid
+            );
+          }
+
+          /*
+           * Page Footer
+           */
+
+          const footer =
+            document.createElement(
+              "div"
+            );
+
+          footer.innerText =
+            `${i + 1}`;
+
+          footer.style.position =
+            "absolute";
+          footer.style.bottom =
+            "30px";
+          footer.style.left = "0";
+          footer.style.right = "0";
+          footer.style.textAlign =
+            "center";
+          footer.style.fontSize =
+            "14px";
+          footer.style.color =
+            "#8c7d6b";
+
+          pageElement.appendChild(
+            footer
+          );
+
+          pdfContainer.appendChild(
+            pageElement
+          );
+
+          const canvas =
+            await html2canvas(
+              pageElement,
+              {
+                scale: 2,
+                useCORS: true,
+                backgroundColor:
+                  "#fdf8ee",
+                logging: false,
+              }
+            );
+
+          const imageData =
+            canvas.toDataURL(
+              "image/jpeg",
+              0.95
+            );
+
+          pdf.addPage();
+
+          pdf.addImage(
+            imageData,
+            "JPEG",
+            0,
+            0,
+            pdfWidth,
+            pdfHeight
+          );
+
+          pdfContainer.removeChild(
+            pageElement
+          );
+        }
+
+        /*
+         * Remove temporary container
+         */
+
+        if (
+          document.body.contains(
+            pdfContainer
+          )
+        ) {
+          document.body.removeChild(
+            pdfContainer
+          );
+        }
+
+        /*
+         * File name
+         */
+
+        const safeTitle =
+          book.title
+            .replace(
+              /[^a-z0-9]/gi,
+              "_"
+            )
+            .replace(
+              /_+/g,
+              "_"
+            );
+
+        pdf.save(
+          `${
+            safeTitle || "My_Diary"
+          }.pdf`
+        );
+      } catch (error) {
+        console.error(
+          "PDF export error:",
+          error
+        );
+
+        alert(
+          "Something went wrong while creating the PDF. Please try again."
+        );
+      } finally {
+        setLoading(false);
       }
-
-      // Page footer
-      const footer = document.createElement("div");
-
-      footer.innerText = `${i + 1}`;
-
-      footer.style.position = "absolute";
-      footer.style.bottom = "30px";
-      footer.style.left = "0";
-      footer.style.right = "0";
-      footer.style.textAlign = "center";
-      footer.style.fontSize = "14px";
-      footer.style.color = "#8c7d6b";
-
-      pageElement.appendChild(footer);
-
-      pdfContainer.appendChild(pageElement);
-
-      // Convert page to canvas
-      const canvas = await html2canvas(pageElement, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#fdf8ee",
-        logging: false,
-      });
-
-      const imageData = canvas.toDataURL("image/jpeg", 0.95);
-
-      pdf.addPage();
-
-      pdf.addImage(
-        imageData,
-        "JPEG",
-        0,
-        0,
-        pdfWidth,
-        pdfHeight
-      );
-
-      pdfContainer.removeChild(pageElement);
-    }
-
-    // Remove temporary container
-    document.body.removeChild(pdfContainer);
-
-    // File name
-    const safeTitle = book.title
-      .replace(/[^a-z0-9]/gi, "_")
-      .replace(/_+/g, "_");
-
-    pdf.save(`${safeTitle || "My_Diary"}.pdf`);
-
-  } catch (error) {
-    console.error("PDF export error:", error);
-
-    alert(
-      "Something went wrong while creating the PDF. Please try again."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+    };
 
   /*
    * ==========================================
@@ -706,18 +1249,19 @@ const DiaryBookDetails = () => {
    */
 
   const activePage =
-    pages.length > 0 ? pages[currentPage] : null;
+    pages.length > 0
+      ? pages[currentPage]
+      : null;
 
   /*
    * ==========================================
    * CONTENT HTML
    * ==========================================
-   *
-   * Diary editor may save HTML.
-   * This displays formatted content.
    */
 
-  const createMarkup = (content: string) => {
+  const createMarkup = (
+    content: string
+  ) => {
     return {
       __html: content || "",
     };
@@ -725,19 +1269,163 @@ const DiaryBookDetails = () => {
 
   /*
    * ==========================================
-   * NAVIGATION
+   * SAVE PAGE ORDER
+   * ==========================================
+   */
+
+  const savePageOrder = async () => {
+    if (
+      !bookId ||
+      pages.length === 0
+    ) {
+      return;
+    }
+
+    try {
+      setSavingPageOrder(true);
+      setError("");
+      setSuccess("");
+
+      const batch =
+        writeBatch(db);
+
+      /*
+       * Save page numbers
+       */
+
+      pages.forEach(
+        (page, index) => {
+          const pageRef = doc(
+            db,
+            "diaryPages",
+            page.id
+          );
+
+          batch.update(pageRef, {
+            pageNumber:
+              index + 1,
+            updatedAt:
+              serverTimestamp(),
+          });
+        }
+      );
+
+      /*
+       * Update book page count
+       */
+
+      const bookRef = doc(
+        db,
+        "diaryBooks",
+        bookId
+      );
+
+      batch.update(bookRef, {
+        pageCount: pages.length,
+        updatedAt:
+          serverTimestamp(),
+      });
+
+      await batch.commit();
+
+      /*
+       * Clean local numbering
+       */
+
+      const cleanPages =
+        pages.map(
+          (page, index) => ({
+            ...page,
+            pageNumber:
+              index + 1,
+          })
+        );
+
+      setPages(cleanPages);
+
+      /*
+       * Update local book count
+       */
+
+      setBook((previous) =>
+        previous
+          ? {
+              ...previous,
+              pageCount:
+                cleanPages.length,
+            }
+          : previous
+      );
+
+      /*
+       * Keep same active page
+       */
+
+      if (activePage) {
+        const activePageId =
+          activePage.id;
+
+        const newIndex =
+          cleanPages.findIndex(
+            (page) =>
+              page.id ===
+              activePageId
+          );
+
+        if (newIndex !== -1) {
+          setCurrentPage(
+            newIndex
+          );
+        }
+      }
+
+      setSuccess(
+        "Page order successfully saved."
+      );
+
+      setTimeout(() => {
+        setSuccess("");
+      }, 2500);
+    } catch (err) {
+      console.error(
+        "Save page order error:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Page order save করতে সমস্যা হয়েছে।"
+      );
+    } finally {
+      setSavingPageOrder(false);
+    }
+  };
+
+  /*
+   * ==========================================
+   * PAGE NAVIGATION
    * ==========================================
    */
 
   const goNextPage = () => {
-    if (currentPage < pages.length - 1) {
-      setCurrentPage((previous) => previous + 1);
+    if (
+      currentPage <
+      pages.length - 1
+    ) {
+      setCurrentPage(
+        (previous) =>
+          previous + 1
+      );
     }
   };
 
   const goPreviousPage = () => {
     if (currentPage > 0) {
-      setCurrentPage((previous) => previous - 1);
+      setCurrentPage(
+        (previous) =>
+          previous - 1
+      );
     }
   };
 
@@ -747,7 +1435,9 @@ const DiaryBookDetails = () => {
    * ==========================================
    */
 
-  const openPage = (index: number) => {
+  const openPage = (
+    index: number
+  ) => {
     setCurrentPage(index);
     setShowContents(false);
     setShowBook(true);
@@ -762,7 +1452,9 @@ const DiaryBookDetails = () => {
   if (loading) {
     return (
       <>
-        <style>{premiumStyles}</style>
+        <style>
+          {premiumStyles}
+        </style>
 
         <div className="premium-diary-background">
           <Container>
@@ -792,17 +1484,24 @@ const DiaryBookDetails = () => {
   if (!book) {
     return (
       <>
-        <style>{premiumStyles}</style>
+        <style>
+          {premiumStyles}
+        </style>
 
         <div className="premium-diary-background min-vh-100">
           <Container className="py-5">
             <Alert variant="danger">
-              {error || "Diary book পাওয়া যায়নি।"}
+              {error ||
+                "Diary book পাওয়া যায়নি।"}
             </Alert>
 
             <Button
               variant="dark"
-              onClick={() => navigate("/user/diary")}
+              onClick={() =>
+                navigate(
+                  "/user/diary"
+                )
+              }
             >
               <FiArrowLeft className="me-2" />
               Back to Diary Books
@@ -821,10 +1520,15 @@ const DiaryBookDetails = () => {
 
   return (
     <>
-      <style>{premiumStyles}</style>
+      <style>
+        {premiumStyles}
+      </style>
 
       <div className="premium-diary-background">
-        <Container fluid className="premium-container">
+        <Container
+          fluid
+          className="premium-container"
+        >
           {/* =====================================
               TOP NAVIGATION
           ===================================== */}
@@ -833,7 +1537,11 @@ const DiaryBookDetails = () => {
             <Button
               variant="light"
               className="premium-back-button"
-              onClick={() => navigate("/user/diary/book")}
+              onClick={() =>
+                navigate(
+                  "/user/diary/book"
+                )
+              }
             >
               <FiArrowLeft className="me-2" />
               All Books
@@ -848,7 +1556,9 @@ const DiaryBookDetails = () => {
               <Button
                 variant="light"
                 className="premium-icon-button"
-                onClick={() => setShowContents(true)}
+                onClick={() =>
+                  setShowContents(true)
+                }
                 title="Table of Contents"
               >
                 <FiList />
@@ -857,7 +1567,9 @@ const DiaryBookDetails = () => {
               <Button
                 variant="light"
                 className="premium-edit-button"
-                onClick={handleEditBook}
+                onClick={
+                  handleEditBook
+                }
               >
                 <FiEdit className="me-2" />
                 Edit Book
@@ -873,7 +1585,9 @@ const DiaryBookDetails = () => {
             <Alert
               variant="danger"
               dismissible
-              onClose={() => setError("")}
+              onClose={() =>
+                setError("")
+              }
               className="premium-alert"
             >
               {error}
@@ -884,7 +1598,9 @@ const DiaryBookDetails = () => {
             <Alert
               variant="success"
               dismissible
-              onClose={() => setSuccess("")}
+              onClose={() =>
+                setSuccess("")
+              }
               className="premium-alert"
             >
               {success}
@@ -901,19 +1617,21 @@ const DiaryBookDetails = () => {
                 <div className="book-cover-shadow" />
 
                 <div className="book-cover">
-                  {/* Spine */}
                   <div className="book-spine" />
 
-                  {/* Cover image */}
                   {book.coverImage ? (
                     <img
-                      src={book.coverImage}
+                      src={
+                        book.coverImage
+                      }
                       alt={book.title}
                       className="book-cover-image"
                     />
                   ) : (
                     <div className="book-cover-placeholder">
-                      <FiBookOpen size={75} />
+                      <FiBookOpen
+                        size={75}
+                      />
                     </div>
                   )}
 
@@ -926,10 +1644,16 @@ const DiaryBookDetails = () => {
 
                     <div className="book-cover-line" />
 
-                    <h1>{book.title}</h1>
+                    <h1>
+                      {book.title}
+                    </h1>
 
                     {book.description && (
-                      <p>{book.description}</p>
+                      <p>
+                        {
+                          book.description
+                        }
+                      </p>
                     )}
 
                     <div className="book-cover-bottom">
@@ -939,7 +1663,8 @@ const DiaryBookDetails = () => {
                         </span>
 
                         <strong>
-                          {book.author || "Me"}
+                          {book.author ||
+                            "Me"}
                         </strong>
                       </div>
 
@@ -952,7 +1677,8 @@ const DiaryBookDetails = () => {
                   </div>
 
                   <div className="book-cover-status">
-                    {book.status === "published"
+                    {book.status ===
+                    "published"
                       ? "PUBLISHED"
                       : "DRAFT"}
                   </div>
@@ -966,7 +1692,9 @@ const DiaryBookDetails = () => {
                   A COLLECTION OF MEMORIES
                 </div>
 
-                <h2>{book.title}</h2>
+                <h2>
+                  {book.title}
+                </h2>
 
                 <p>
                   {book.description ||
@@ -976,14 +1704,17 @@ const DiaryBookDetails = () => {
                 <div className="cover-meta">
                   <div>
                     <FiCalendar />
-                    <span>{dateRange}</span>
+                    <span>
+                      {dateRange}
+                    </span>
                   </div>
 
                   <div>
                     <FiFileText />
                     <span>
                       {pages.length}{" "}
-                      {pages.length === 1
+                      {pages.length ===
+                      1
                         ? "Page"
                         : "Pages"}
                     </span>
@@ -992,7 +1723,8 @@ const DiaryBookDetails = () => {
                   <div>
                     <FiEdit />
                     <span>
-                      {book.author || "Personal Diary"}
+                      {book.author ||
+                        "Personal Diary"}
                     </span>
                   </div>
                 </div>
@@ -1001,12 +1733,18 @@ const DiaryBookDetails = () => {
                   <Button
                     className="open-book-button"
                     onClick={() => {
-                      setCurrentPage(0);
-                      setShowBook(true);
+                      setCurrentPage(
+                        0
+                      );
+                      setShowBook(
+                        true
+                      );
                     }}
                   >
                     <FiBookOpen className="me-2" />
-                    {pages.length > 0
+
+                    {pages.length >
+                    0
                       ? "Open My Diary"
                       : "Start My Diary"}
                   </Button>
@@ -1014,7 +1752,11 @@ const DiaryBookDetails = () => {
                   <Button
                     variant="outline-dark"
                     className="contents-button"
-                    onClick={() => setShowContents(true)}
+                    onClick={() =>
+                      setShowContents(
+                        true
+                      )
+                    }
                   >
                     <FiList className="me-2" />
                     Contents
@@ -1035,8 +1777,6 @@ const DiaryBookDetails = () => {
 
           {showBook && (
             <div className="reader-section">
-              {/* Reader header */}
-
               <div className="reader-heading">
                 <div>
                   <div className="reader-eyebrow">
@@ -1052,7 +1792,11 @@ const DiaryBookDetails = () => {
                 <Button
                   variant="light"
                   className="close-book-button"
-                  onClick={() => setShowBook(false)}
+                  onClick={() =>
+                    setShowBook(
+                      false
+                    )
+                  }
                 >
                   <FiX className="me-2" />
                   Close Book
@@ -1060,25 +1804,29 @@ const DiaryBookDetails = () => {
               </div>
 
               {pages.length === 0 ? (
-                /* =================================
-                   EMPTY BOOK
-                ================================= */
-
                 <div className="empty-book">
                   <div className="empty-book-icon">
-                    <FiBookOpen size={55} />
+                    <FiBookOpen
+                      size={55}
+                    />
                   </div>
 
-                  <h3>Your diary is waiting.</h3>
+                  <h3>
+                    Your diary is waiting.
+                  </h3>
 
                   <p>
-                    এই বইয়ের প্রথম page তৈরি করে
-                    তোমার memories লেখা শুরু করো।
+                    এই বইয়ের প্রথম
+                    page তৈরি করে
+                    তোমার memories
+                    লেখা শুরু করো।
                   </p>
 
                   <Button
                     className="open-book-button"
-                    onClick={handleAddPage}
+                    onClick={
+                      handleAddPage
+                    }
                   >
                     <FiPlus className="me-2" />
                     Create First Page
@@ -1086,23 +1834,15 @@ const DiaryBookDetails = () => {
                 </div>
               ) : (
                 <>
-                  {/* =================================
-                     BOOK
-                  ================================= */}
+                  {/* BOOK */}
 
                   <div className="real-book-area">
                     <div className="real-book-shadow" />
 
                     <div className="real-book">
-                      {/* Left decorative edge */}
-
                       <div className="book-page-edge left-edge" />
 
-                      {/* Page */}
-
                       <div className="diary-paper">
-                        {/* Page top */}
-
                         <div className="paper-top">
                           <span>
                             {book.title}
@@ -1114,61 +1854,61 @@ const DiaryBookDetails = () => {
                           </span>
                         </div>
 
-                        {/* Decorative line */}
-
                         <div className="paper-decoration">
                           <span />
                           <FiBookOpen />
                           <span />
                         </div>
 
-                        {/* Date */}
-
                         {activePage?.date && (
                           <div className="diary-date">
                             <FiCalendar className="me-2" />
-                            {activePage.date}
+                            {
+                              activePage.date
+                            }
                           </div>
                         )}
-
-                        {/* Title */}
 
                         <h1 className="diary-page-title">
                           {activePage?.title ||
                             "Untitled Memory"}
                         </h1>
 
-                        {/* Content */}
-
                         <div
                           className="diary-content"
                           dangerouslySetInnerHTML={createMarkup(
-                            activePage?.content || ""
+                            activePage?.content ||
+                              ""
                           )}
                         />
 
-                        {/* Images */}
-
                         {activePage &&
-                          activePage.images.length >
+                          activePage.images
+                            .length >
                             0 && (
                             <div className="diary-photo-section">
                               <div className="photo-section-title">
                                 <span />
+
                                 <span>
                                   <FiImage className="me-1" />
                                   Memories
                                 </span>
+
                                 <span />
                               </div>
 
                               <div
                                 className={`diary-photo-grid ${
-                                  activePage.images
-                                    .length === 1
+                                  activePage
+                                    .images
+                                    .length ===
+                                  1
                                     ? "single-photo"
-                                    : activePage.images
-                                        .length === 2
+                                    : activePage
+                                        .images
+                                        .length ===
+                                      2
                                     ? "two-photo"
                                     : ""
                                 }`}
@@ -1188,9 +1928,12 @@ const DiaryBookDetails = () => {
                                       }
                                     >
                                       <img
-                                        src={image}
+                                        src={
+                                          image
+                                        }
                                         alt={`${activePage.title} ${
-                                          imageIndex + 1
+                                          imageIndex +
+                                          1
                                         }`}
                                       />
 
@@ -1199,7 +1942,8 @@ const DiaryBookDetails = () => {
                                       </div>
 
                                       <div className="photo-number">
-                                        {imageIndex + 1}
+                                        {imageIndex +
+                                          1}
                                       </div>
                                     </div>
                                   )
@@ -1208,22 +1952,23 @@ const DiaryBookDetails = () => {
                             </div>
                           )}
 
-                        {/* Empty content */}
-
                         {!activePage?.content &&
-                          activePage?.images.length ===
+                          activePage?.images
+                            .length ===
                             0 && (
                             <div className="empty-page-content">
-                              <FiFileText size={35} />
+                              <FiFileText
+                                size={35}
+                              />
 
                               <div>
-                                এই page-এ এখনো কোনো
-                                content নেই।
+                                এই page-এ
+                                এখনো কোনো
+                                content
+                                নেই।
                               </div>
                             </div>
                           )}
-
-                        {/* Bottom */}
 
                         <div className="paper-bottom">
                           <div className="paper-author">
@@ -1233,64 +1978,82 @@ const DiaryBookDetails = () => {
                           </div>
 
                           <div className="paper-page-number">
-                            {activePage?.pageNumber}
+                            {
+                              activePage?.pageNumber
+                            }
                           </div>
                         </div>
                       </div>
-
-                      {/* Right decorative edge */}
 
                       <div className="book-page-edge right-edge" />
                     </div>
                   </div>
 
-                  {/* =================================
-                     READER CONTROLS
-                  ================================= */}
+                  {/* READER CONTROLS */}
 
                   <div className="reader-controls">
                     <Button
                       className="page-navigation previous"
-                      disabled={currentPage === 0}
-                      onClick={goPreviousPage}
+                      disabled={
+                        currentPage ===
+                        0
+                      }
+                      onClick={
+                        goPreviousPage
+                      }
                     >
-                      <FiChevronLeft size={22} />
-                      <span>Previous</span>
+                      <FiChevronLeft
+                        size={22}
+                      />
+                      <span>
+                        Previous
+                      </span>
                     </Button>
 
                     <div className="page-counter">
                       <strong>
-                        {currentPage + 1}
+                        {currentPage +
+                          1}
                       </strong>
 
                       <span>/</span>
 
-                      <span>{pages.length}</span>
+                      <span>
+                        {pages.length}
+                      </span>
                     </div>
 
                     <Button
                       className="page-navigation next"
                       disabled={
                         currentPage ===
-                        pages.length - 1
+                        pages.length -
+                          1
                       }
-                      onClick={goNextPage}
+                      onClick={
+                        goNextPage
+                      }
                     >
-                      <span>Next</span>
-                      <FiChevronRight size={22} />
+                      <span>
+                        Next
+                      </span>
+
+                      <FiChevronRight
+                        size={22}
+                      />
                     </Button>
                   </div>
 
-                  {/* =================================
-                     PAGE ACTIONS
-                  ================================= */}
+                  {/* PAGE ACTIONS */}
 
                   {activePage && (
                     <div className="page-actions">
                       <Button
                         variant="light"
                         onClick={() =>
-                          handleEditPage(activePage)
+                          handleEditPage(
+                            activePage
+                          )
                         }
                       >
                         <FiEdit className="me-2" />
@@ -1301,7 +2064,9 @@ const DiaryBookDetails = () => {
                         variant="light"
                         className="text-danger"
                         onClick={() =>
-                          handleAskDelete(activePage)
+                          handleAskDelete(
+                            activePage
+                          )
                         }
                       >
                         <FiTrash2 className="me-2" />
@@ -1310,7 +2075,9 @@ const DiaryBookDetails = () => {
 
                       <Button
                         className="add-page-action"
-                        onClick={handleAddPage}
+                        onClick={
+                          handleAddPage
+                        }
                       >
                         <FiPlus className="me-2" />
                         Add Page
@@ -1318,27 +2085,35 @@ const DiaryBookDetails = () => {
                     </div>
                   )}
 
-                  {/* =================================
-                     PAGE DOTS
-                  ================================= */}
+                  {/* PAGE DOTS */}
 
                   <div className="page-dots">
-                    {pages.map((page, index) => (
-                      <button
-                        key={page.id}
-                        className={
-                          index === currentPage
-                            ? "active"
-                            : ""
-                        }
-                        onClick={() =>
-                          setCurrentPage(index)
-                        }
-                        title={`Page ${page.pageNumber}`}
-                      >
-                        {index + 1}
-                      </button>
-                    ))}
+                    {pages.map(
+                      (
+                        page,
+                        index
+                      ) => (
+                        <button
+                          key={
+                            page.id
+                          }
+                          className={
+                            index ===
+                            currentPage
+                              ? "active"
+                              : ""
+                          }
+                          onClick={() =>
+                            setCurrentPage(
+                              index
+                            )
+                          }
+                          title={`Page ${page.pageNumber}`}
+                        >
+                          {index + 1}
+                        </button>
+                      )
+                    )}
                   </div>
                 </>
               )}
@@ -1353,7 +2128,9 @@ const DiaryBookDetails = () => {
             <div className="bottom-add-page">
               <Button
                 variant="dark"
-                onClick={handleAddPage}
+                onClick={
+                  handleAddPage
+                }
               >
                 <FiPlus className="me-2" />
                 Add New Diary Page
@@ -1363,14 +2140,27 @@ const DiaryBookDetails = () => {
         </Container>
       </div>
 
+      {/* ==========================================
+          EXPORT PDF
+      ========================================== */}
+
       <Button
-  variant="outline-light"
-  onClick={exportDiaryToPDF}
-  disabled={loading || pages.length === 0}
->
-  <FiDownload className="me-2" />
-  {loading ? "Creating PDF..." : "Export PDF"}
-</Button>
+        variant="outline-light"
+        onClick={
+          exportDiaryToPDF
+        }
+        disabled={
+          loading ||
+          pages.length === 0
+        }
+        className="premium-pdf-button"
+      >
+        <FiDownload className="me-2" />
+
+        {loading
+          ? "Creating PDF..."
+          : "Export PDF"}
+      </Button>
 
       {/* ==========================================
           TABLE OF CONTENTS MODAL
@@ -1378,7 +2168,9 @@ const DiaryBookDetails = () => {
 
       <Modal
         show={showContents}
-        onHide={() => setShowContents(false)}
+        onHide={() =>
+          setShowContents(false)
+        }
         centered
         size="lg"
         className="premium-modal"
@@ -1393,7 +2185,10 @@ const DiaryBookDetails = () => {
         <Modal.Body>
           <div className="contents-header">
             <div>
-              <small>TABLE OF CONTENTS</small>
+              <small>
+                TABLE OF CONTENTS
+              </small>
+
               <h4>
                 {pages.length}{" "}
                 {pages.length === 1
@@ -1402,22 +2197,56 @@ const DiaryBookDetails = () => {
               </h4>
             </div>
 
-            <Button
-              size="sm"
-              variant="dark"
-              onClick={() => {
-                setShowContents(false);
-                handleAddPage();
-              }}
-            >
-              <FiPlus className="me-1" />
-              Add
-            </Button>
+            <div className="d-flex gap-2">
+              <Button
+                size="sm"
+                variant="outline-dark"
+                onClick={
+                  savePageOrder
+                }
+                disabled={
+                  savingPageOrder ||
+                  pages.length < 2
+                }
+              >
+                {savingPageOrder ? (
+                  <>
+                    <Spinner
+                      size="sm"
+                      animation="border"
+                      className="me-1"
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FiList className="me-1" />
+                    Save Order
+                  </>
+                )}
+              </Button>
+
+              <Button
+                size="sm"
+                variant="dark"
+                onClick={() => {
+                  setShowContents(
+                    false
+                  );
+                  handleAddPage();
+                }}
+              >
+                <FiPlus className="me-1" />
+                Add
+              </Button>
+            </div>
           </div>
 
           {pages.length === 0 ? (
             <div className="contents-empty">
-              <FiBookOpen size={45} />
+              <FiBookOpen
+                size={45}
+              />
 
               <p className="mt-3 mb-0">
                 এখনো কোনো page নেই।
@@ -1425,49 +2254,136 @@ const DiaryBookDetails = () => {
             </div>
           ) : (
             <div className="contents-list">
-              {pages.map((page, index) => (
-                <button
-                  key={page.id}
-                  className={`contents-item ${
-                    index === currentPage &&
-                    showBook
-                      ? "active"
-                      : ""
-                  }`}
-                  onClick={() => openPage(index)}
-                >
-                  <div className="contents-number">
-                    {page.pageNumber
-                      .toString()
-                      .padStart(2, "0")}
-                  </div>
+              {pages.map(
+                (
+                  page,
+                  index
+                ) => {
+                  const isDragging =
+                    draggedPageId ===
+                    page.id;
 
-                  <div className="contents-main">
-                    <strong>
-                      {page.title ||
-                        "Untitled Memory"}
-                    </strong>
+                  const isDragOver =
+                    dragOverPageId ===
+                    page.id;
 
-                    {page.date && (
-                      <small>
-                        <FiCalendar className="me-1" />
-                        {page.date}
-                      </small>
-                    )}
-                  </div>
+                  return (
+                    <div
+                      key={page.id}
+                      className={[
+                        "contents-drag-item",
+                        isDragging
+                          ? "is-dragging"
+                          : "",
+                        isDragOver
+                          ? "is-drag-over"
+                          : "",
+                      ]
+                        .filter(
+                          Boolean
+                        )
+                        .join(" ")}
+                      draggable
+                      onDragStart={(
+                        event
+                      ) =>
+                        startPageDrag(
+                          event,
+                          page.id
+                        )
+                      }
+                      onDragOver={(
+                        event
+                      ) =>
+                        handlePageDragOver(
+                          event,
+                          page.id
+                        )
+                      }
+                      onDrop={(event) =>
+                        handlePageDrop(
+                          event,
+                          page.id
+                        )
+                      }
+                      onDragEnd={
+                        handlePageDragEnd
+                      }
+                    >
+                      {/* Drag Handle */}
 
-                  <div className="contents-photo-count">
-                    {page.images.length > 0 && (
-                      <>
-                        <FiImage />
-                        {page.images.length}
-                      </>
-                    )}
+                      <div
+                        className="drag-handle"
+                        title="Drag to reorder"
+                      >
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                      </div>
 
-                    <FiChevronRight />
-                  </div>
-                </button>
-              ))}
+                      {/* Page Number */}
+
+                      <div className="contents-number">
+                        {(index + 1)
+                          .toString()
+                          .padStart(
+                            2,
+                            "0"
+                          )}
+                      </div>
+
+                      {/* Page Content */}
+
+                      <button
+                        type="button"
+                        className="contents-page-button"
+                        onClick={() =>
+                          openPage(
+                            index
+                          )
+                        }
+                      >
+                        <div className="contents-main">
+                          <strong>
+                            {page.title ||
+                              "Untitled Memory"}
+                          </strong>
+
+                          {page.date && (
+                            <small>
+                              <FiCalendar className="me-1" />
+                              {
+                                page.date
+                              }
+                            </small>
+                          )}
+                        </div>
+
+                        <div className="contents-photo-count">
+                          {page.images
+                            .length >
+                            0 && (
+                            <>
+                              <FiImage />
+
+                              {
+                                page
+                                  .images
+                                  .length
+                              }
+                            </>
+                          )}
+
+                          <FiChevronRight />
+                        </div>
+                      </button>
+                    </div>
+                  );
+                }
+              )}
             </div>
           )}
         </Modal.Body>
@@ -1479,7 +2395,9 @@ const DiaryBookDetails = () => {
 
       <Modal
         show={!!selectedImage}
-        onHide={() => setSelectedImage(null)}
+        onHide={() =>
+          setSelectedImage(null)
+        }
         centered
         fullscreen
         className="image-lightbox-modal"
@@ -1487,7 +2405,9 @@ const DiaryBookDetails = () => {
         <div className="image-lightbox">
           <button
             className="lightbox-close"
-            onClick={() => setSelectedImage(null)}
+            onClick={() =>
+              setSelectedImage(null)
+            }
           >
             <FiX size={30} />
           </button>
@@ -1509,13 +2429,19 @@ const DiaryBookDetails = () => {
         show={showDeleteModal}
         onHide={() => {
           if (!deletingPage) {
-            setShowDeleteModal(false);
+            setShowDeleteModal(
+              false
+            );
             setSelectedPage(null);
           }
         }}
         centered
       >
-        <Modal.Header closeButton={!deletingPage}>
+        <Modal.Header
+          closeButton={
+            !deletingPage
+          }
+        >
           <Modal.Title>
             <FiTrash2 className="me-2 text-danger" />
             Delete Diary Page
@@ -1525,23 +2451,30 @@ const DiaryBookDetails = () => {
         <Modal.Body>
           <div className="text-center py-3">
             <div className="delete-icon">
-              <FiTrash2 size={40} />
+              <FiTrash2
+                size={40}
+              />
             </div>
 
             <h5 className="fw-bold mt-3">
-              Page {selectedPage?.pageNumber}{" "}
+              Page{" "}
+              {
+                selectedPage?.pageNumber
+              }{" "}
               delete করবেন?
             </h5>
 
             <p className="text-muted mb-0">
               {selectedPage?.title ||
                 "এই diary page"}{" "}
-              permanently delete হয়ে যাবে।
+              permanently delete
+              হয়ে যাবে।
             </p>
 
             <div className="alert alert-warning mt-4 mb-0">
-              Page delete করার পর বাকি pages
-              automatically আবার 1, 2, 3... হিসেবে
+              Page delete করার পর
+              বাকি pages automatically
+              আবার 1, 2, 3... হিসেবে
               সাজানো হবে।
             </div>
           </div>
@@ -1550,9 +2483,13 @@ const DiaryBookDetails = () => {
         <Modal.Footer>
           <Button
             variant="secondary"
-            disabled={deletingPage}
+            disabled={
+              deletingPage
+            }
             onClick={() => {
-              setShowDeleteModal(false);
+              setShowDeleteModal(
+                false
+              );
               setSelectedPage(null);
             }}
           >
@@ -1561,8 +2498,12 @@ const DiaryBookDetails = () => {
 
           <Button
             variant="danger"
-            disabled={deletingPage}
-            onClick={handleDeletePage}
+            disabled={
+              deletingPage
+            }
+            onClick={
+              handleDeletePage
+            }
           >
             {deletingPage ? (
               <>
@@ -2384,6 +3325,23 @@ const premiumStyles = `
   }
 
   /* ================================
+     PDF BUTTON
+  ================================= */
+
+  .premium-pdf-button {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    z-index: 1000;
+    background: #29251f !important;
+    border-color: #29251f !important;
+    color: white !important;
+    border-radius: 10px !important;
+    padding: 11px 18px !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  }
+
+  /* ================================
      EMPTY BOOK
   ================================= */
 
@@ -2506,6 +3464,129 @@ const premiumStyles = `
     text-align: center;
     padding: 60px 20px;
     color: #968a78;
+  }
+
+  /* ================================
+     DRAG & DROP CONTENTS
+  ================================= */
+
+  .contents-drag-item {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #faf8f2;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    transition:
+      transform 0.2s ease,
+      background 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .contents-drag-item:hover {
+    background: #f3eee4;
+  }
+
+  .contents-drag-item.is-dragging {
+    opacity: 0.45;
+    transform: scale(0.98);
+  }
+
+  .contents-drag-item.is-drag-over {
+    border-color: #8f8067;
+    background: #eee7d9;
+    box-shadow:
+      0 -3px 0 #8f8067 inset;
+  }
+
+  .drag-handle {
+    width: 34px;
+    min-width: 34px;
+    display: grid;
+    grid-template-columns: repeat(2, 4px);
+    grid-auto-rows: 4px;
+    justify-content: center;
+    align-content: center;
+    gap: 3px;
+    cursor: grab;
+    opacity: 0.4;
+    padding: 10px 0;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .drag-handle span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #766b5b;
+  }
+
+  .contents-drag-item:hover .drag-handle {
+    opacity: 0.8;
+  }
+
+  .contents-page-button {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 13px 15px 13px 3px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .contents-page-button:hover {
+    background: transparent;
+  }
+
+  .contents-page-button .contents-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .contents-page-button .contents-main strong {
+    display: block;
+    font-family: Georgia, "Times New Roman", serif;
+    color: #332e27;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .contents-page-button .contents-main small {
+    display: block;
+    margin-top: 4px;
+    color: #918676;
+  }
+
+  .contents-drag-item .contents-number {
+    width: 42px;
+    min-width: 42px;
+    text-align: center;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    color: #9a8c76;
+  }
+
+  .contents-drag-item .contents-photo-count {
+    min-width: 65px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    color: #978a78;
   }
 
   /* ================================
@@ -2803,6 +3884,52 @@ const premiumStyles = `
       max-width: 100%;
       max-height: 85vh;
     }
+
+    /* Drag & Drop mobile */
+
+    .contents-drag-item {
+      gap: 3px;
+    }
+
+    .drag-handle {
+      width: 28px;
+      min-width: 28px;
+    }
+
+    .contents-drag-item .contents-number {
+      width: 30px;
+      min-width: 30px;
+      font-size: 13px;
+    }
+
+    .contents-page-button {
+      padding-right: 8px;
+      gap: 8px;
+    }
+
+    .contents-drag-item .contents-photo-count {
+      min-width: 35px;
+    }
+
+    .contents-photo-count svg:first-child {
+      display: none;
+    }
+
+    .premium-pdf-button {
+      right: 12px;
+      bottom: 12px;
+      padding: 9px 13px !important;
+      font-size: 13px;
+    }
+
+    .contents-header {
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .contents-header .d-flex {
+      flex-shrink: 0;
+    }
   }
 
   @media (max-width: 420px) {
@@ -2841,6 +3968,20 @@ const premiumStyles = `
 
     .paper-bottom {
       margin-top: 25px;
+    }
+
+    .contents-header {
+      flex-direction: column;
+    }
+
+    .contents-header .d-flex {
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .premium-pdf-button {
+      font-size: 12px;
+      padding: 8px 11px !important;
     }
   }
 `;

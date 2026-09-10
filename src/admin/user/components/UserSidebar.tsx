@@ -11,6 +11,7 @@ import {
   FaSignOutAlt,
   FaTachometerAlt,
   FaTimes,
+  FaBook,
 } from "react-icons/fa";
 
 import { auth } from "../../../firebase/config";
@@ -115,16 +116,12 @@ const UserSidebar = ({
       icon: <FaUser />,
     },
 
-     {
-      label: "My Diary",
-      path: "/user/diary",
-      icon: <FaUser />,
-    },
+    
 
      {
       label: "My Books",
       path: "/user/diary/book",
-      icon: <FaUser />,
+      icon: <FaBook />,
     },
 
 
