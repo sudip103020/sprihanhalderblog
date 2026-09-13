@@ -124,6 +124,12 @@ const UserSidebar = ({
       icon: <FaBook />,
     },
 
+    {
+      label: "My Alarms",
+      path: "/user/diary/Period",
+      icon: <FaBook />,
+    },
+
 
     {
       label: "Settings",
