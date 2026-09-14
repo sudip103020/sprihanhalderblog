@@ -1574,243 +1574,351 @@ const PeriodDashboard = () => {
 
                 {/* WEEKDAYS */}
 
-                <div
-                  className="d-grid mb-2"
-                  style={{
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap: "5px",
-                  }}
-                >
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                    (day) => (
-                      <div
-                        key={day}
-                        className="text-center small fw-semibold text-muted py-2"
-                      >
-                        {day}
-                      </div>
-                    ),
-                  )}
-                </div>
-
+               <div
+  className="d-grid mb-2"
+  style={{
+    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+    gap: window.innerWidth < 576 ? "3px" : "5px",
+  }}
+>
+  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+    (day) => (
+      <div
+        key={day}
+        className="text-center fw-semibold text-muted py-1"
+        style={{
+          fontSize:
+            window.innerWidth < 576
+              ? "10px"
+              : "12px",
+        }}
+      >
+        {window.innerWidth < 576
+          ? day.charAt(0)
+          : day}
+      </div>
+    ),
+  )}
+</div>
                 {/* CALENDAR */}
 
-                <div
-                  className="d-grid"
+            
+
+
+<div
+  className="d-grid"
+  style={{
+    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+    gap: window.innerWidth < 576 ? "3px" : "5px",
+  }}
+>
+  {calendarDays.map((date, index) => {
+    if (!date) {
+      return (
+        <div
+          key={`empty-${index}`}
+          style={{
+            minHeight: window.innerWidth < 576 ? "48px" : "70px",
+          }}
+        />
+      );
+    }
+
+    const status = getDateStatus(date);
+    const automaticStatus = getAutomaticDateStatus(date);
+    const manualOverride = getManualOverride(date);
+
+    const selected = selectedDate === date;
+    const isToday = date === today;
+
+    const log = dailyLogs.find((item) => item.date === date);
+
+    let background = "#fff";
+    let border = "1px solid #eee";
+    let textColor = "#4b3b45";
+
+    /* STATUS COLORS */
+
+    if (status === "period") {
+
+      background = "#fde1ea";
+      border = "1px solid #f1a6bd";
+      textColor = "#a63e64";
+    }
+
+    if (status === "lower-fertility") {
+      background = "#e8f4fb";
+      border = "1px solid #9bcde5";
+      textColor = "#36789a";
+    }
+
+    if (status === "fertile") {
+      background = "#eee8ff";
+      border = "1px solid #c9b8ef";
+      textColor = "#7050a7";
+    }
+
+    if (status === "ovulation") {
+      background = "#ddd1ff";
+      border = "2px solid #8c67c7";
+      textColor = "#5d3e8f";
+    }
+
+    if (status === "expected") {
+      background = "#fff0e0";
+      border = "1px dashed #e0a86d";
+      textColor = "#a7652e";
+    }
+
+    return (
+      <div
+        key={date}
+        style={{
+          position: "relative",
+          minWidth: 0,
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => openDateActionMenu(date)}
+          style={{
+            width: "100%",
+            minWidth: 0,
+
+            /* Mobile */
+            minHeight: window.innerWidth < 576 ? "48px" : "70px",
+
+            border,
+            borderRadius: window.innerWidth < 576 ? "8px" : "12px",
+
+            background,
+            color: textColor,
+
+            position: "relative",
+
+            padding:
+              window.innerWidth < 576
+                ? "5px 3px"
+                : "8px",
+
+            cursor: "pointer",
+
+            outline: selected
+              ? "3px solid #c45c89"
+              : "none",
+
+            outlineOffset: "-3px",
+
+            overflow: "hidden",
+          }}
+        >
+          {/* DATE NUMBER */}
+
+          <div
+            className="d-flex justify-content-center align-items-center"
+            style={{
+              position: "relative",
+              minHeight:
+                window.innerWidth < 576
+                  ? "20px"
+                  : "24px",
+            }}
+          >
+            <span
+              className="fw-semibold"
+              style={{
+                fontSize:
+                  window.innerWidth < 576
+                    ? "12px"
+                    : "14px",
+              }}
+            >
+              {parseDate(date).getDate()}
+            </span>
+
+            {/* TODAY / MANUAL INDICATORS */}
+
+            <div
+              className="d-flex align-items-center gap-1"
+              style={{
+                position: "absolute",
+                right:
+                  window.innerWidth < 576
+                    ? "2px"
+                    : "5px",
+                top: "1px",
+              }}
+            >
+              {manualOverride && (
+                <span
+                  title="Manual status"
                   style={{
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap: "5px",
+                    width:
+                      window.innerWidth < 576
+                        ? "5px"
+                        : "7px",
+                    height:
+                      window.innerWidth < 576
+                        ? "5px"
+                        : "7px",
+                    borderRadius: "50%",
+                    background: "#c75c8a",
+                    display: "inline-block",
                   }}
-                >
-                  {calendarDays.map((date, index) => {
-                    if (!date) {
-                      return (
-                        <div
-                          key={`empty-${index}`}
-                          style={{
-                            minHeight: "70px",
-                          }}
-                        />
-                      );
-                    }
+                />
+              )}
 
-                    const status = getDateStatus(date);
+              {isToday && (
+                <span
+                  title="Today"
+                  style={{
+                    width:
+                      window.innerWidth < 576
+                        ? "5px"
+                        : "7px",
+                    height:
+                      window.innerWidth < 576
+                        ? "5px"
+                        : "7px",
+                    borderRadius: "50%",
+                    background: "#c75c8a",
+                    display: "inline-block",
+                  }}
+                />
+              )}
+            </div>
+          </div>
 
-                    const automaticStatus = getAutomaticDateStatus(date);
+          {/* DESKTOP STATUS TEXT */}
 
-                    const manualOverride = getManualOverride(date);
+          <div
+            className="d-none d-sm-block"
+            style={{
+              fontSize: "11px",
+              marginTop: "5px",
+              lineHeight: "1.2",
+            }}
+          >
+            {status === "period" && "🩸 Period"}
 
-                    const selected = selectedDate === date;
+            {status === "lower-fertility" &&
+              "🌿 Lower Fertility"}
 
-                    const isToday = date === today;
+            {status === "fertile" && "🌷 Fertile"}
 
-                    const log = dailyLogs.find((item) => item.date === date);
+            {status === "ovulation" && "⭐ Ovulation"}
 
-                    let background = "#fff";
+            {status === "expected" &&
+              "🩸 Expected"}
+          </div>
 
-                    let border = "1px solid #eee";
+          {/* MOBILE STATUS DOT */}
 
-                    let textColor = "#4b3b45";
+          <div
+            className="d-sm-none"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: "3px",
+              gap: "3px",
+            }}
+          >
+            {status && (
+              <span
+                title={
+                  getStatusConfig(status)?.label ||
+                  ""
+                }
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background:
+                    getStatusConfig(status)?.color ||
+                    "#999",
+                  display: "inline-block",
+                }}
+              />
+            )}
 
-                    /* PERIOD */
+            {log && (
+              <span
+                title="Wellness log saved"
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#299466",
+                  display: "inline-block",
+                }}
+              />
+            )}
+          </div>
 
-                    if (status === "period") {
-                      background = "#fde1ea";
+          {/* DESKTOP WELLNESS LOG */}
 
-                      border = "1px solid #f1a6bd";
+          {log && (
+            <span
+              className="d-none d-sm-block"
+              title="Wellness log saved"
+              style={{
+                position: "absolute",
+                bottom: "6px",
+                right: "7px",
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: "#299466",
+                boxShadow:
+                  "0 0 0 2px rgba(41, 148, 102, 0.12)",
+              }}
+            />
+          )}
 
-                      textColor = "#a63e64";
-                    }
+          {/* MOBILE MANUAL INDICATOR */}
 
-                    /* LOWER FERTILITY */
+          {manualOverride && (
+            <span
+              className="d-sm-none"
+              title="Manual status"
+              style={{
+                position: "absolute",
+                bottom: "3px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "4px",
+                height: "4px",
+                borderRadius: "50%",
+                background: "#925bb4",
+              }}
+            />
+          )}
+        </button>
 
-                    if (status === "lower-fertility") {
-                      background = "#e8f4fb";
-                      border = "1px solid #9bcde5";
-                      textColor = "#36789a";
-                    }
+        {/* DESKTOP AUTO STATUS */}
 
-                    /* FERTILE */
+        {manualOverride &&
+          automaticStatus !== manualOverride.status && (
+            <div
+              className="d-none d-sm-block text-center"
+              style={{
+                fontSize: "8px",
+                color: "#8a6d3b",
+                marginTop: "2px",
+              }}
+            >
+              Auto:{" "}
+              {getStatusConfig(automaticStatus)?.label ||
+                "None"}
+            </div>
+          )}
+      </div>
+    );
+  })}
+</div>
 
-                    if (status === "fertile") {
-                      background = "#eee8ff";
 
-                      border = "1px solid #c9b8ef";
-
-                      textColor = "#7050a7";
-                    }
-
-                    /* OVULATION */
-
-                    if (status === "ovulation") {
-                      background = "#ddd1ff";
-
-                      border = "2px solid #8c67c7";
-
-                      textColor = "#5d3e8f";
-                    }
-
-                    /* EXPECTED */
-
-                    if (status === "expected") {
-                      background = "#fff0e0";
-
-                      border = "1px dashed #e0a86d";
-
-                      textColor = "#a7652e";
-                    }
-
-                    return (
-                      <div
-                        key={date}
-                        style={{
-                          position: "relative",
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            openDateActionMenu(date);
-                          }}
-                          style={{
-                            width: "100%",
-                            minHeight: "70px",
-                            border,
-                            borderRadius: "12px",
-                            background,
-                            color: textColor,
-                            position: "relative",
-                            padding: "8px",
-                            cursor: "pointer",
-                            outline: selected ? "3px solid #c45c89" : "none",
-                            outlineOffset: "-3px",
-                          }}
-                        >
-                          <div className="d-flex justify-content-between">
-                            <span className="fw-semibold">
-                              {parseDate(date).getDate()}
-                            </span>
-
-                            <div className="d-flex align-items-center gap-1">
-                              {manualOverride && (
-                                <span
-                                  title="Manual status"
-                                  style={{
-                                    width: "7px",
-                                    height: "7px",
-                                    borderRadius: "50%",
-                                    background: "#c75c8a",
-                                    display: "inline-block",
-                                  }}
-                                />
-                              )}
-
-                              {isToday && (
-                                <span
-                                  style={{
-                                    width: "7px",
-                                    height: "7px",
-                                    borderRadius: "50%",
-                                    background: "#c75c8a",
-                                    display: "inline-block",
-                                  }}
-                                />
-                              )}
-                            </div>
-                          </div>
-
-                          {status === "period" && (
-                            <div className="small mt-2">🩸 Period</div>
-                          )}
-
-                          {status === "lower-fertility" && (
-                            <div className="small mt-2">🌿 Lower Fertility</div>
-                          )}
-
-                          {status === "fertile" && (
-                            <div className="small mt-2">🌷 Fertile</div>
-                          )}
-
-                          {status === "ovulation" && (
-                            <div className="small mt-2">⭐ Ovulation</div>
-                          )}
-
-                          {status === "expected" && (
-                            <div className="small mt-2">🩸 Expected</div>
-                          )}
-
-                          {manualOverride && (
-                            <div
-                              className="small mt-1 fw-semibold"
-                              style={{
-                                fontSize: "9px",
-                                color: "#a64d76",
-                              }}
-                            >
-                              Manual
-                            </div>
-                          )}
-
-                     {log && (
-  <span
-    title="Wellness log saved"
-    style={{
-      position: "absolute",
-      bottom: "6px",
-      right: "7px",
-      width: "8px",
-      height: "8px",
-      borderRadius: "50%",
-      background: "#299466",
-      boxShadow: "0 0 0 2px rgba(41, 148, 102, 0.12)",
-    }}
-  />
-)}
-                        </button>
-
-                        {/* MANUAL STATUS BUTTON */}
-
-                        {/* SHOW AUTO STATUS IN TOOLTIP */}
-
-                        {manualOverride &&
-                          automaticStatus !== manualOverride.status && (
-                            <div
-                              className="text-center"
-                              style={{
-                                fontSize: "8px",
-                                color: "#8a6d3b",
-                                marginTop: "2px",
-                              }}
-                            >
-                              Auto:{" "}
-                              {getStatusConfig(automaticStatus)?.label ||
-                                "None"}
-                            </div>
-                          )}
-                      </div>
-                    );
-                  })}
-                </div>
 
                 {/* LEGEND */}
 
