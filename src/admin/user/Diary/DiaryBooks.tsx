@@ -889,22 +889,14 @@ const DiaryBooks = () => {
                           opacity: 0.65,
                         }}
                       >
-                        My Collection
+                      
                       </div>
 
                       <h1 className="fw-bold mb-1">
-                        Diary Library
+                        My Collection
                       </h1>
 
-                      <p
-                        className="mb-0"
-                        style={{
-                          opacity: 0.68,
-                        }}
-                      >
-                        Your memories, stories
-                        and beautiful moments.
-                      </p>
+                     
                     </div>
                   </div>
                 </Col>

@@ -11,10 +11,12 @@ import {
   FaSignOutAlt,
   FaTachometerAlt,
   FaTimes,
-  FaBook,
+
+  
 } from "react-icons/fa";
 
 import { auth } from "../../../firebase/config";
+import { FiBookOpen } from "react-icons/fi";
 
 interface UserSidebarProps {
   isOpen: boolean;
@@ -121,13 +123,13 @@ const UserSidebar = ({
      {
       label: "My Books",
       path: "/user/diary/book",
-      icon: <FaBook />,
+      icon: <FiBookOpen />,
     },
 
     {
-      label: "My Alarms",
+      label: "Period Tracker",
       path: "/user/diary/Period",
-      icon: <FaBook />,
+      icon: "🩸",
     },
 
 
